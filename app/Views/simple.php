@@ -1,0 +1,1 @@
+<section class="page-hero"><div class="container"><span class="eyebrow">97 FOUNDATION</span><h1><?=e($title)?></h1><p><?=e($lead)?></p></div></section><section class="section"><div class="container narrow"><div class="content-card"><h2><?=e($lead)?></h2><p><?=e($body)?></p></div></div></section>

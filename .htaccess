@@ -1,0 +1,16 @@
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+RewriteEngine On
+
+# Never expose application source, database scripts, private storage, tests or docs.
+RewriteRule ^(?:app|database|storage|tests|docs)(?:/|$) - [F,L,NC]
+
+# Leave intended public assets and uploaded public media to Apache.
+# Everything else is routed through the front controller.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+<FilesMatch "^(?:config(?:\.(?:example|local))?\.php|bootstrap\.php|\.env|composer\.(?:json|lock)|package(?:-lock)?\.json|README\.md|CHANGELOG\.md|FIX_NOTES\.md)$">
+    Require all denied
+</FilesMatch>

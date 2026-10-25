@@ -1,0 +1,4 @@
+<?php
+require dirname(__DIR__).'/bootstrap.php';
+use App\Payments\Gateways\PayHereGateway;
+$cfg=['mode'=>'sandbox','merchant_id'=>'121XXXX','merchant_secret'=>'secret123','api_app_id'=>'','api_app_secret'=>''];$g=new PayHereGateway($cfg);$tx=['public_id'=>'97P-TEST','gateway_order_id'=>'ORDER-123','donor_name'=>'Saman Perera','donor_email'=>'saman@example.com','donor_phone'=>'+94771234567','donor_address'=>'No 1','donor_city'=>'Polonnaruwa','amount'=>1000,'campaign_id'=>null];$p=$g->buildCheckoutPayload($tx);$expected=strtoupper(md5('121XXXX'.'ORDER-123'.'1000.00'.'LKR'.strtoupper(md5('secret123'))));$ok=hash_equals($expected,$p['hash'])&&$p['amount']==='1000.00'&&$p['currency']==='LKR'&&str_contains($g->checkoutUrl(),'sandbox.payhere.lk');echo ($ok?'PASS':'FAIL')." - PayHere checkout hash generation\n";exit($ok?0:1);

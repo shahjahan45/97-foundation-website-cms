@@ -1,0 +1,7 @@
+{
+  "name": "97-foundation-php",
+  "private": true,
+  "scripts": {
+    "php:lint": "find app -name '*.php' -print0 | xargs -0 -n1 php -l"
+  }
+}

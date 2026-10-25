@@ -1,0 +1,23 @@
+<?php
+$root=dirname(__DIR__);$checks=[];
+$helpers=file_get_contents($root.'/app/helpers.php');
+$branding=file_get_contents($root.'/app/Views/admin/branding.php');
+$bc=file_get_contents($root.'/app/Controllers/Admin/BrandingAdminController.php');
+$adminAuth=file_get_contents($root.'/app/Views/layouts/admin-auth.php');
+$memberLogin=file_get_contents($root.'/app/Views/member/login.php');
+$portalLogin=file_get_contents($root.'/app/Views/portal/login.php');
+$campaign=file_get_contents($root.'/app/Views/admin/campaigns.php');
+$site=file_get_contents($root.'/app/Views/layouts/site.php');
+$messages=file_get_contents($root.'/app/Views/admin/messages.php');
+$checks['Versioned public uploads']=str_contains($helpers,'filemtime($file)');
+$checks['Portal login image setting']=str_contains($bc,"portal_login_image_path")&&str_contains($branding,'Foundation Portal Login Image');
+$checks['Member login image setting']=str_contains($bc,"member_login_image_path")&&str_contains($branding,'Member Login Side Image');
+$checks['Admin login background setting']=str_contains($bc,"admin_login_background_path")&&str_contains($adminAuth,'admin-auth-shell-v59');
+$checks['Professional favicon handling']=str_contains($site,'apple-touch-icon');
+$checks['Sri Lanka SEO targeting']=str_contains($branding,'Polonnaruwa')&&str_contains($branding,'Thambala')&&str_contains($site,'areaServed');
+$checks['Member login logo']=str_contains($memberLogin,'member-auth-official-brand');
+$checks['Portal visual logo']=str_contains($portalLogin,'portal-login-visual-logo');
+$checks['Campaign image preview']=str_contains($campaign,'campaign-editor-image-preview')&&str_contains($campaign,'cover_image_url');
+$checks['Recipient logo fallback']=str_contains($messages,'recipient-avatar-logo');
+$checks['V5.9 database upgrade']=is_file($root.'/database/upgrade_v5_9.php');
+$ok=true;foreach($checks as $name=>$pass){echo ($pass?'PASS':'FAIL')." - $name\n";$ok=$ok&&$pass;}exit($ok?0:1);

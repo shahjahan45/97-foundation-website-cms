@@ -1,0 +1,1 @@
+<section class="page-hero compact"><div class="container"><span class="eyebrow">97 FOUNDATION</span><h1>Page not found</h1><p>The page you requested could not be found.</p><a class="btn btn-primary" href="<?=url('')?>">Back Home</a></div></section>

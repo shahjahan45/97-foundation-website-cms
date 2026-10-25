@@ -1,0 +1,8 @@
+<?php
+namespace App\Controllers\Admin;
+use App\Core\Controller;use App\Core\Auth;use App\Core\Database;use App\Core\Session;use App\Core\Totp;use App\Core\Audit;
+final class SecurityAdminController extends Controller
+{
+ public function index():void{$u=Auth::requireAdmin();$secret=Session::get('2fa.pending_secret');$this->view('admin/security',['user'=>$u,'pendingSecret'=>$secret],'admin');}
+ public function twoFactor():void{$this->requirePost();$u=Auth::requireAdmin();$action=$_POST['action']??'';if($action==='generate'){Session::put('2fa.pending_secret',Totp::generateSecret());Session::flash('success','A new authenticator secret was generated. Enter the 6-digit code to confirm.');redirect('admin/security');}if($action==='enable'){$secret=(string)Session::get('2fa.pending_secret','');$code=trim($_POST['otp']??'');if(!$secret||!Totp::verify($secret,$code)){Session::flash('error','The authenticator code was not valid.');redirect('admin/security');}Database::exec('UPDATE users SET two_factor_secret=?,two_factor_enabled=1 WHERE id=?',[$secret,(int)$u['id']]);Session::forget('2fa.pending_secret');Audit::write((int)$u['id'],'SETTINGS_CHANGED','security',(int)$u['id'],'2FA enabled');Session::flash('success','Two-factor authentication enabled.');redirect('admin/security');}if($action==='disable'){Database::exec('UPDATE users SET two_factor_secret=NULL,two_factor_enabled=0 WHERE id=?',[(int)$u['id']]);Audit::write((int)$u['id'],'SETTINGS_CHANGED','security',(int)$u['id'],'2FA disabled');Session::flash('success','Two-factor authentication disabled.');redirect('admin/security');}redirect('admin/security');}
+}
