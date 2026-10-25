@@ -1,3 +1,8 @@
+## V7.1.2 — 2026-10-25 — Administrators manager & sidebar profile
+- New Admin → System → **Administrators** page (Super Admin only): add administrators, assign one of seven roles, set status, upload a profile photo, reset passwords with a strong-password generator, suspend/activate and delete accounts.
+- Safeguards: you cannot change your own role, suspend or delete yourself, and at least one active Super Admin always remains. Every change is written to the audit log.
+- Sidebar footer redesigned: profile card with photo or initials, name and role (opens My Profile) and a full-width Sign out button underneath.
+
 ## V7.1.1 — 2026-10-25 — Header logo size controls
 - New Admin → Branding & SEO → **Header Logo & Size** card with live desktop/mobile preview, quick size presets, separate logo / text image / mobile heights, show-or-hide text image and compact-on-scroll options.
 - Logos are now sized by height (no more square box), so wide or tall logo files display at full size.

@@ -35,6 +35,7 @@ function admin_icon(string $name, string $class = ''): string
         'shield' => '<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
         'key' => '<circle cx="8" cy="15.5" r="4"/><path d="m10.8 12.7 8.7-8.7M16.5 7l2.5 2.5M14 9.5l2 2"/>',
         'user' => '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+        'admins' => '<circle cx="9.5" cy="8" r="3.5"/><path d="M3 20a6.5 6.5 0 0 1 10-5.5"/><path d="M17.5 13 20 14v2.2c0 1.6-1 3-2.5 3.6-1.5-.6-2.5-2-2.5-3.6V14l2.5-1Z"/>',
         'external' => '<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"/>',
         'logout' => '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="m10 16 4-4-4-4M14 12H4"/>',
         'search' => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
@@ -60,7 +61,7 @@ function admin_breadcrumb(string $path, string $title): array
         '/admin/messages' => 'Support & Messages', '/admin/live-chat' => 'Support & Messages',
         '/admin/content' => 'Content & Website', '/admin/causes' => 'Content & Website', '/admin/events' => 'Content & Website', '/admin/gallery' => 'Content & Website', '/admin/posts' => 'Content & Website', '/admin/branding' => 'Content & Website',
         '/admin/developer' => 'Developer Integration',
-        '/admin/social' => 'System', '/admin/security' => 'System', '/admin/account-security' => 'System', '/admin/profile' => 'System', '/admin/notifications' => 'System',
+        '/admin/administrators' => 'System', '/admin/social' => 'System', '/admin/security' => 'System', '/admin/account-security' => 'System', '/admin/profile' => 'System', '/admin/notifications' => 'System',
     ];
     foreach ($map as $prefix => $section) {
         if ($path === $prefix || str_starts_with($path, $prefix . '/')) return [$section, $title];

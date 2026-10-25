@@ -12,7 +12,7 @@ $isFundraising=str_starts_with($path,'/admin/campaigns')||str_starts_with($path,
 $isPeople=str_starts_with($path,'/admin/volunteers')||str_starts_with($path,'/admin/members')||str_starts_with($path,'/admin/officials');
 $isSupport=str_starts_with($path,'/admin/messages')||str_starts_with($path,'/admin/live-chat');
 $isContent=str_starts_with($path,'/admin/content')||str_starts_with($path,'/admin/causes')||str_starts_with($path,'/admin/events')||str_starts_with($path,'/admin/gallery')||str_starts_with($path,'/admin/posts')||str_starts_with($path,'/admin/branding');
-$isSystem=str_starts_with($path,'/admin/social')||str_starts_with($path,'/admin/security')||str_starts_with($path,'/admin/account-security')||str_starts_with($path,'/admin/profile');
+$isSystem=str_starts_with($path,'/admin/administrators')||str_starts_with($path,'/admin/social')||str_starts_with($path,'/admin/security')||str_starts_with($path,'/admin/account-security')||str_starts_with($path,'/admin/profile');
 $isDeveloper=str_starts_with($path,'/admin/developer');
 $bodyClass=trim('admin-v7 '.(string)($adminBodyClass??''));
 $brandLogo=$logoEnabled?brand_logo_url():'';
@@ -93,6 +93,7 @@ $brandLogo=$logoEnabled?brand_logo_url():'';
         <div class="side-group <?=$isSystem?'open active':''?>" data-side-group>
             <button type="button" class="side-parent" data-side-toggle aria-expanded="<?=$isSystem?'true':'false'?>"><span class="side-nav-icon"><?=admin_icon('system')?></span><span>System</span><i><?=admin_icon('chevron')?></i></button>
             <div class="side-submenu">
+                <?php if(($u['role']??'')==='super_admin'):?><a class="<?=nav_active('admin/administrators')?>" href="<?=url('admin/administrators')?>"><span class="side-sub-icon"><?=admin_icon('admins')?></span><span>Administrators</span></a><?php endif;?>
                 <a class="<?=nav_active('admin/social')?>" href="<?=url('admin/social')?>"><span class="side-sub-icon"><?=admin_icon('share')?></span><span>Social Media</span></a>
                 <a class="<?=nav_active('admin/security')?>" href="<?=url('admin/security')?>"><span class="side-sub-icon"><?=admin_icon('shield')?></span><span>Security & 2FA</span></a>
                 <a class="<?=nav_active('admin/account-security')?>" href="<?=url('admin/account-security')?>"><span class="side-sub-icon"><?=admin_icon('key')?></span><span>Account Security</span></a>
@@ -103,8 +104,13 @@ $brandLogo=$logoEnabled?brand_logo_url():'';
     </nav>
 
     <div class="side-footer">
-        <div class="side-user-mini"><span><?=e(strtoupper(substr($u['name']??'A',0,1)))?></span><div><small>Signed in as</small><b><?=e($u['name']??'Administrator')?></b></div></div>
-        <form action="<?=url('admin/logout')?>" method="post"><?=csrf_field()?><button type="submit" aria-label="Sign out"><?=admin_icon('logout')?><span>Sign out</span></button></form>
+        <?php $sideName=trim((string)($u['name']??'Administrator'));$sideInitials='';foreach(array_slice(preg_split('/\s+/',$sideName)?:[],0,2) as $part)$sideInitials.=mb_strtoupper(mb_substr($part,0,1));?>
+        <a class="side-profile <?=nav_active('admin/profile')?>" href="<?=url('admin/profile')?>" title="View my profile">
+            <span class="side-avatar"><?php if(!empty($u['profile_photo'])):?><img src="<?=e(public_upload($u['profile_photo']))?>" alt=""><?php else:?><?=e($sideInitials?:'A')?><?php endif;?><i aria-hidden="true"></i></span>
+            <span class="side-profile-text"><b><?=e($sideName)?></b><small><?=e(str_replace('_',' ',ucwords($u['role']??'administrator','_')))?></small></span>
+            <span class="side-profile-go" aria-hidden="true"><?=admin_icon('chevron')?></span>
+        </a>
+        <form action="<?=url('admin/logout')?>" method="post" class="side-signout-form"><?=csrf_field()?><button type="submit" class="side-signout"><?=admin_icon('logout')?><span>Sign out</span></button></form>
     </div>
 </aside>
 <div class="sidebar-scrim" data-admin-menu-close hidden></div>

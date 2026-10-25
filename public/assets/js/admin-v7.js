@@ -44,7 +44,7 @@
         const target = input.closest('.hero7-slot')?.querySelector('.hero7-slot-media img')
           || input.closest('.hero7-circle-slot')?.querySelector('img')
           || input.closest('.branding-asset-card')?.querySelector('.branding-preview img')
-          || (input.name === 'photo' ? qs('[data-official-photo-preview] img') : null);
+          || (input.name === 'photo' ? (qs('[data-official-photo-preview] img') || qs('[data-admin-photo-preview] img')) : null);
         if (!target) return;
         // Data URL (not blob:) keeps the preview inside the site's Content-Security-Policy img-src.
         const reader = new FileReader();
@@ -109,6 +109,72 @@
         r.readAsDataURL(file);
       }));
       sync();
+    }
+
+
+    /* ---------- Administrators manager ---------- */
+    const adminForm = qs('[data-admin-form]');
+    if (adminForm) {
+      const el = n => adminForm.elements.namedItem(n);
+      const title = qs('[data-admin-editor-title]'), sub = qs('[data-admin-editor-sub]'), submit = qs('[data-admin-submit]');
+      const pwd = qs('[data-admin-password]'), pwd2 = qs('[data-admin-password-confirm]'), meter = qs('[data-admin-strength]');
+      const role = qs('[data-admin-role]'), roleDesc = qs('[data-admin-role-desc]');
+      const preview = qs('[data-admin-photo-preview]'), initials = qs('[data-admin-initials]'), removeRow = qs('[data-admin-remove-photo]');
+      const pwLabel = qs('[data-admin-password-label]');
+      const initialsOf = v => (v || '').trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase() || 'A';
+      const syncRole = () => { const o = role?.selectedOptions[0]; if (roleDesc && o) roleDesc.textContent = o.dataset.desc || ''; };
+      const strength = v => { let s = 0; if (v.length >= 12) s++; if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++; if (/\d/.test(v)) s++; if (/[^A-Za-z0-9]/.test(v)) s++; return v ? s : 0; };
+      const syncStrength = () => {
+        const lvl = strength(pwd.value); meter.dataset.level = String(lvl);
+        const span = qs('span', meter);
+        if (span) span.textContent = !pwd.value ? (el('id').value ? 'Leave blank to keep the current password.' : 'Use 12+ characters with upper and lower case, a number and a symbol.') : lvl === 4 ? 'Strong password.' : 'Add ' + [pwd.value.length < 12 ? '12+ characters' : '', !(/[A-Z]/.test(pwd.value) && /[a-z]/.test(pwd.value)) ? 'upper & lower case' : '', !/\d/.test(pwd.value) ? 'a number' : '', !/[^A-Za-z0-9]/.test(pwd.value) ? 'a symbol' : ''].filter(Boolean).join(', ') + '.';
+        pwd2.setCustomValidity(pwd2.value && pwd2.value !== pwd.value ? 'Passwords do not match.' : '');
+      };
+      const setPhoto = url => {
+        const img = qs('img', preview);
+        if (url) { img.src = url; img.hidden = false; } else { img.removeAttribute('src'); img.hidden = true; }
+        if (removeRow) removeRow.hidden = !url;
+      };
+      const setMode = (editing, isMe) => {
+        title.textContent = editing ? 'Edit Administrator' : 'Add Administrator';
+        sub.textContent = editing ? 'Update details, role or status. Leave the password blank to keep it.' : 'The new administrator signs in with this email and password.';
+        submit.textContent = editing ? 'Save Changes' : 'Create Administrator';
+        pwLabel.textContent = editing ? 'Reset password (optional)' : 'Password *';
+        pwd.required = !editing; pwd2.required = !editing;
+        [el('role'), el('status')].forEach(f => { f.disabled = !!isMe; f.title = isMe ? 'You cannot change your own role or status.' : ''; });
+        syncStrength();
+      };
+      const reset = () => { adminForm.reset(); el('id').value = ''; setPhoto(''); initials.textContent = 'A'; setMode(false, false); syncRole(); };
+      qsa('[data-admin-edit]').forEach(btn => btn.addEventListener('click', () => {
+        let d = {}; try { d = JSON.parse(btn.getAttribute('data-admin-edit')); } catch { return; }
+        adminForm.reset();
+        ['id', 'name', 'email', 'username', 'role', 'status'].forEach(k => { const f = el(k); if (f) f.value = d[k] ?? ''; });
+        initials.textContent = initialsOf(d.name); setPhoto(d.photo_url || ''); setMode(true, !!Number(d.is_me)); syncRole();
+        qs('#admin-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el('name')?.focus({ preventScroll: true });
+      }));
+      qsa('[data-admin-new],[data-admin-reset]').forEach(b => b.addEventListener('click', () => { reset(); qs('#admin-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el('name')?.focus({ preventScroll: true }); }));
+      // Disabled selects are not submitted; re-enable just before sending (the server also blocks self-demotion).
+      adminForm.addEventListener('submit', () => { [el('role'), el('status')].forEach(f => { f.disabled = false; }); });
+      qs('[data-admin-name]')?.addEventListener('input', e => { if (qs('img', preview).hidden) initials.textContent = initialsOf(e.target.value); });
+      role?.addEventListener('change', syncRole);
+      pwd.addEventListener('input', syncStrength); pwd2.addEventListener('input', syncStrength);
+      qs('[data-admin-generate]')?.addEventListener('click', () => {
+        const sets = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '!@#$%&*?-+='];
+        const all = sets.join(''); const rnd = n => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+        let chars = sets.map(s => s[rnd(s.length)]); while (chars.length < 16) chars.push(all[rnd(all.length)]);
+        for (let i = chars.length - 1; i > 0; i--) { const j = rnd(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+        pwd.value = pwd2.value = chars.join(''); pwd.type = 'text';
+        const t = qs('[data-admin-toggle-password]'); if (t) t.textContent = 'Hide';
+        syncStrength();
+      });
+      qs('[data-admin-toggle-password]')?.addEventListener('click', e => { const show = pwd.type === 'password'; pwd.type = pwd2.type = show ? 'text' : 'password'; e.currentTarget.textContent = show ? 'Hide' : 'Show'; });
+      qs('[data-admin-copy-password]')?.addEventListener('click', async e => {
+        if (!pwd.value) return; const b = e.currentTarget;
+        try { await navigator.clipboard.writeText(pwd.value); b.textContent = 'Copied'; } catch { pwd.type = 'text'; pwd.select(); b.textContent = 'Select'; }
+        setTimeout(() => { b.textContent = 'Copy'; }, 1600);
+      });
+      reset();
     }
 
     /* ---------- Officials editor ---------- */

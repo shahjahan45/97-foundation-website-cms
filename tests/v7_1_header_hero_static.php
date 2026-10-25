@@ -35,6 +35,8 @@ $checks = [
     'Admin professional layer' => str_contains($admin, "css/admin-v7.css") && str_contains($admin, 'admin_breadcrumb(') && str_contains($admin, "admin/officials"),
     'Header logo size controls' => str_contains($read('app/Views/admin/branding.php'), 'name="header_logo_height"') && str_contains($read('app/Controllers/Admin/BrandingAdminController.php'), "'logo_height'") && str_contains($css, '.brand7-logo{height:var(--logo-h)'),
     'Logo empty-space trimming' => str_contains($read('app/Core/BrandImage.php'), 'function optimize(') && str_contains($read('app/Controllers/Admin/BrandingAdminController.php'), 'BrandImage::optimize'),
+    'Administrators manager (Super Admin only)' => str_contains($index, "/admin/administrators/save") && str_contains($read('app/Controllers/Admin/AdministratorAdminController.php'), "!== 'super_admin'") && str_contains($read('app/Controllers/Admin/AdministratorAdminController.php'), 'activeSuperAdmins') && str_contains($admin, "admin/administrators"),
+    'Sidebar profile card with Sign out underneath' => (bool)preg_match('~class="side-profile.*?</a>\s*<form[^>]+admin/logout~s', $admin),
     'CSP-safe assets (no external fonts/scripts)' => !str_contains($layout, 'fonts.googleapis.com') && !preg_match('~<script[^>]+src="https?://~', $layout),
 ];
 $ok = true;
