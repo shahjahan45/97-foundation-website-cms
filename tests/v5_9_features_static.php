@@ -18,6 +18,6 @@ $checks['Sri Lanka SEO targeting']=str_contains($branding,'Polonnaruwa')&&str_co
 $checks['Member login logo']=str_contains($memberLogin,'member-auth-official-brand');
 $checks['Portal visual logo']=str_contains($portalLogin,'portal-login-visual-logo');
 $checks['Campaign image preview']=str_contains($campaign,'campaign-editor-image-preview')&&str_contains($campaign,'cover_image_url');
-$checks['Recipient logo fallback']=str_contains($messages,'recipient-avatar-logo');
+$checks['Recipient avatar (V7.2: initials replace the repeated logo)']=str_contains($messages,'v7-recipient-avatar');
 $checks['V5.9 database upgrade']=is_file($root.'/database/upgrade_v5_9.php');
 $ok=true;foreach($checks as $name=>$pass){echo ($pass?'PASS':'FAIL')." - $name\n";$ok=$ok&&$pass;}exit($ok?0:1);

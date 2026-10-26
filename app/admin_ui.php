@@ -46,6 +46,12 @@ function admin_icon(string $name, string $class = ''): string
         'check' => '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
         'home' => '<path d="m3.5 11 8.5-7 8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>',
         'upload' => '<path d="M12 15V4m0 0-4 4m4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+        'eye' => '<path d="M2.8 12s3.2-6 9.2-6 9.2 6 9.2 6-3.2 6-9.2 6-9.2-6-9.2-6Z"/><circle cx="12" cy="12" r="2.6"/>',
+        'eye_off' => '<path d="M10.6 6.1A9.6 9.6 0 0 1 12 6c6 0 9.2 6 9.2 6a15.5 15.5 0 0 1-2.4 3.2M6.6 7.6C4.2 9.2 2.8 12 2.8 12s3.2 6 9.2 6a9 9 0 0 0 4.4-1.1"/><path d="M9.9 9.9a2.6 2.6 0 0 0 3.7 3.7M4 4l16 16"/>',
+        'trash' => '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>',
+        'pin' => '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.4"/>',
+        'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+        'power' => '<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
         'slider' => '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3 15 5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="9.5" r="1.4"/>',
     ];
     $body = $paths[$name] ?? $paths['dashboard'];
@@ -67,4 +73,11 @@ function admin_breadcrumb(string $path, string $title): array
         if ($path === $prefix || str_starts_with($path, $prefix . '/')) return [$section, $title];
     }
     return ['Overview', $title];
+}
+
+/** Current admin path with its query string, for "return here" redirects (V7.2). */
+function admin_return_path(): string
+{
+    $q = (string)($_SERVER['QUERY_STRING'] ?? '');
+    return ltrim(current_path(), '/') . ($q !== '' ? '?' . $q : '');
 }

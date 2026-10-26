@@ -1,3 +1,23 @@
+## V7.2.1 — 2026-10-26 — Online payments switch and admin polish
+- **Online card payments On / Off:** one switch, shown on Easy Payment Setup, Online Payment Transactions and Donation Page Settings (and summarised on the dashboard). It refuses to turn on until the PayHere Merchant ID and Secret are saved, and Live mode still requires HTTPS. Saving the setup form no longer changes the on/off state by accident.
+- **Gallery and Cause Areas:** compact thumbnail grid instead of large photos, search and filters, visible/hidden counts, one-click show/hide, and the current image previewed when editing.
+- **Events:** date-led event list with Upcoming / Past / Draft filters and a helpful empty state.
+- **Portal Messages:** clean recipient list with initials, role badges, search, "Select shown", "Clear" and a selected count (fixes overlapping names and emails).
+- **Live Chat:** fixed the oversized search box and page-size control, tidier header actions.
+- **Payment setup steps and Branding & SEO:** fixed text that wrapped one word per line, the sticky Save bar now spans the page with a clear message, logo cards and checkboxes use the full width.
+- **Fixes:** hidden gallery photos no longer disappear from the admin list; every "Clear" / "New" button resets its editor.
+
+## V7.2 — 2026-10-26 — Homepage, donations, fundraising, News & SEO
+- **Homepage redesign:** new section layouts, SVG icons instead of text symbols, real photography for demo images, one orchestrated hero entrance, staggered scroll reveals, count-up figures, animated campaign progress, parallax, gallery viewer with previous/next, smoother page transitions and a reading-progress bar. Motion turns off for visitors who prefer reduced motion. Inter is now self-hosted.
+- **Mandatory receipts:** every bank-transfer donation needs a JPG, PNG, WEBP or PDF receipt (checked in the browser and on the server, up to the configured size). Drag-and-drop upload with preview and clear errors; typed details are kept if something needs correcting. Receipts stay private; admins see them on the donation page. Approval (payment verification) remains a separate step.
+- **Fundraising switch:** Admin → Fundraising Campaigns → Public fundraising On / Paused. Paused hides campaign sections, blocks campaign donations (bank and online) and optionally keeps general donations open. No records are deleted.
+- **News & Blog:** categories with their own pages, editable readable web addresses, one-click publish/unpublish, scheduling, search, formatting (headings, lists, links, quotes), SEO title/description with a search preview, redesigned listing and article pages with contents, reading time and related articles.
+- **Sharing:** WhatsApp, Facebook, LinkedIn, X, Telegram, email, copy link and native device sharing on every article and campaign.
+- **SEO:** article Open Graph tags, NewsArticle/BlogPosting and breadcrumb structured data, canonical pages for lists, noindex on sign-in and private pages, sitemap with last-modified dates, stricter robots.txt.
+- **Admin dashboard:** receipts awaiting review, fundraising status, publishing summary and recent donations.
+- **Fixes:** Escape now closes the desktop dropdowns and the mobile menu reliably; the homepage no longer reports the latest news post as its page type; footer no longer shows placeholder text or zero counts.
+- **Tests:** `tests/v7_2_features_static.php` and a Playwright end-to-end suite in `tests/e2e/site.e2e.js`.
+
 ## V7.1.2 — 2026-10-25 — Administrators manager & sidebar profile
 - New Admin → System → **Administrators** page (Super Admin only): add administrators, assign one of seven roles, set status, upload a profile photo, reset passwords with a strong-password generator, suspend/activate and delete accounts.
 - Safeguards: you cannot change your own role, suspend or delete yourself, and at least one active Super Admin always remains. Every change is written to the audit log.

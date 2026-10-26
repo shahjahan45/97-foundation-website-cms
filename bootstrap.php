@@ -25,6 +25,11 @@ App\Core\Security::boot($config);
 App\Core\Database::configure($config['db']);
 App\Core\App::setConfig($config);
 
+// V7.2: apply the small, idempotent database update automatically on the first web request.
+if (PHP_SAPI !== 'cli') {
+    try { App\Core\Upgrade72::autoApply(); } catch (\Throwable $e) { error_log('V7.2 database update could not run: ' . $e->getMessage()); }
+}
+
 // Production-safe exception/fatal handling. Full technical details stay in the
 // server log while visitors receive a stable, branded response with a reference.
 $renderProductionFailure = static function(string $reference): void {

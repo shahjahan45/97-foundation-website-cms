@@ -260,3 +260,62 @@ function site_link(string $target, string $fallback = ''): string
     if (preg_match('~^(https?:|mailto:|tel:|#)~i', $target)) return $target;
     return url(ltrim($target, '/'));
 }
+
+/**
+ * V7.2 homepage line icons (24px grid, 1.8 stroke, currentColor) — CSP-safe inline SVG.
+ */
+function site_line_icon(string $name, string $class = ''): string
+{
+    static $paths = [
+        'arrow' => '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+        'arrow_up' => '<path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>',
+        'support' => '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/><path d="m6 6 3.6 3.6M14.4 14.4 18 18M18 6l-3.6 3.6M9.6 14.4 6 18"/>',
+        'donate' => '<path d="M12 11.4 8.9 8.3a2.1 2.1 0 0 1 3-3l.1.1.1-.1a2.1 2.1 0 0 1 3 3Z"/><path d="M3 14.5h3.2l2.9 2h4.2a1.5 1.5 0 0 0 0-3H11"/><path d="m14.6 15.4 4.5-2.5a1.6 1.6 0 0 1 2 2.4l-5.5 4.2H9l-6-1"/>',
+        'people' => '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 5.2a3 3 0 0 1 0 5.6M17.5 13.6a5 5 0 0 1 3 5.9"/>',
+        'campaign' => '<path d="M5 21V4"/><path d="M5 4.5h11l-2 3.75 2 3.75H5"/>',
+        'heart' => '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/>',
+        'target' => '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+        'education' => '<path d="M3 5.6c3.2-1 6.2-.6 9 1.5 2.8-2.1 5.8-2.5 9-1.5v12.9c-3.2-1-6.2-.6-9 1.5-2.8-2.1-5.8-2.5-9-1.5Z"/><path d="M12 7.1V20"/>',
+        'health' => '<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6Z"/><path d="M12 8.6v6M9 11.6h6"/>',
+        'food' => '<path d="M3.5 11.5h17a8.5 8.5 0 0 1-17 0Z"/><path d="M8.5 20.5h7"/><path d="M9 4.2c-.9 1.1.9 2.2 0 3.3M12.5 3.4c-.9 1.1.9 2.2 0 3.3M16 4.2c-.9 1.1.9 2.2 0 3.3"/>',
+        'emergency' => '<path d="M6.5 18v-5.5a5.5 5.5 0 0 1 11 0V18"/><path d="M4 18h16v2.5H4Z"/><path d="M12 2.8v2.2M4.3 6.1l1.5 1.5M19.7 6.1l-1.5 1.5"/><path d="M12 10.2v4"/>',
+        'family' => '<path d="m3.5 11 8.5-7 8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M12 17.4 9.9 15.3a1.5 1.5 0 0 1 2.1-2.1 1.5 1.5 0 0 1 2.1 2.1Z"/>',
+        'water' => '<path d="M12 3.5s6.5 7 6.5 11a6.5 6.5 0 0 1-13 0c0-4 6.5-11 6.5-11Z"/><path d="M9 15a3 3 0 0 0 3 3"/>',
+        'calendar' => '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+        'pin' => '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.4"/>',
+        'expand' => '<path d="M14.5 4H20v5.5M20 4l-6.5 6.5M9.5 20H4v-5.5M4 20l6.5-6.5"/>',
+        'check' => '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+        'shield' => '<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+        'lock' => '<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5v-3a4 4 0 0 1 8 0v3"/><path d="M12 14.6v2.4"/>',
+        'network' => '<circle cx="12" cy="5.5" r="2.5"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/><path d="M10.8 7.7 6.7 15.8M13.2 7.7l4.1 8.1M8 18h8"/>',
+        'mail' => '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7.5 8 5.5 8-5.5"/>',
+        'news' => '<path d="M5 20h13a2 2 0 0 0 2-2V5H7v13a2 2 0 0 1-4 0V9h4"/><path d="M10.5 9h6M10.5 12.5h6M10.5 16h3.5"/>',
+        'gallery' => '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 4.5-4.5 3.5 3.5 2.5-2.5 5.5 5"/>',
+        'search' => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+        'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+        'list' => '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1" fill="currentColor" stroke="none"/>',
+    ];
+    $body = $paths[$name] ?? $paths['heart'];
+    return '<svg class="' . e(trim('li7 ' . $class)) . '" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $body . '</svg>';
+}
+
+/** Pick a line icon for a cause/category from its name (falls back to a heart). */
+function home_cause_icon(string $name): string
+{
+    $n = strtolower($name);
+    $map = [
+        'education' => ['educat', 'school', 'learn', 'student', 'scholar', 'book'],
+        'health' => ['health', 'medic', 'clinic', 'wellbeing', 'well-being', 'hospital', 'care'],
+        'food' => ['food', 'meal', 'essential', 'nutrition', 'ration', 'hunger', 'grocer'],
+        'emergency' => ['emergenc', 'relief', 'disaster', 'urgent', 'flood', 'crisis'],
+        'family' => ['famil', 'home', 'house', 'shelter', 'orphan', 'elder'],
+        'water' => ['water', 'sanit', 'well '],
+        'people' => ['social', 'community', 'volunteer', 'youth', 'women', 'empower'],
+    ];
+    foreach ($map as $icon => $needles) {
+        foreach ($needles as $needle) {
+            if (str_contains($n, $needle)) return $icon;
+        }
+    }
+    return 'heart';
+}

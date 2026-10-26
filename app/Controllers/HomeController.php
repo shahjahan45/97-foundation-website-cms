@@ -24,7 +24,8 @@ final class HomeController extends Controller
             'verified_donations'=>(int)(Database::one('SELECT COUNT(*) c FROM donations WHERE status="approved"')['c']??0),
             'focus_areas'=>(int)(Database::one('SELECT COUNT(*) c FROM campaign_categories WHERE is_active=1')['c']??0),
         ];
-        $this->view('home',['campaigns'=>$campaigns,'hero'=>$hero,'heroSlides'=>$heroSlides,'heroPreloadUrl'=>$heroSlides[0]['desktop']??'','categories'=>$categories,'gallery'=>$gallery,'events'=>$events,'posts'=>$posts,'sections'=>$sections,'stats'=>$stats,'settings'=>$siteSettings,'seo'=>['title'=>setting('seo','default_title','97 Foundation — Community Support in Sri Lanka'),'description'=>setting('seo','default_description','97 Foundation is a community support and charity platform serving Sri Lanka, with a focus on Polonnaruwa and Thambala.')]]);
+        $fundraisingOn=\App\Core\Fundraising::enabled();if(!$fundraisingOn){$campaigns=[];$stats['campaigns']=0;}
+        $this->view('home',['fundraisingOn'=>$fundraisingOn,'campaigns'=>$campaigns,'hero'=>$hero,'heroSlides'=>$heroSlides,'heroPreloadUrl'=>$heroSlides[0]['desktop']??'','categories'=>$categories,'gallery'=>$gallery,'events'=>$events,'posts'=>$posts,'sections'=>$sections,'stats'=>$stats,'settings'=>$siteSettings,'seo'=>['title'=>setting('seo','default_title','97 Foundation — Community Support in Sri Lanka'),'description'=>setting('seo','default_description','97 Foundation is a community support and charity platform serving Sri Lanka, with a focus on Polonnaruwa and Thambala.')]]);
     }
     public function about(): void { $this->pageView('about'); }
 
@@ -87,13 +88,14 @@ final class HomeController extends Controller
     {
         $page=Site::page('campaigns');
         $campaigns=Database::all('SELECT c.*,COALESCE(SUM(CASE WHEN d.status="approved" THEN d.amount ELSE 0 END),0) raised FROM campaigns c LEFT JOIN donations d ON d.campaign_id=c.id WHERE c.is_active=1 AND c.is_visible=1 AND c.status IN("active","completed","upcoming") GROUP BY c.id ORDER BY FIELD(c.status,"active","upcoming","completed"),c.created_at DESC');
-        $this->view('campaigns',['page'=>$page,'campaigns'=>$campaigns,'settings'=>Site::settings(),'seo'=>$this->seo($page)]);
+        $fundraisingOn=\App\Core\Fundraising::enabled();
+        $this->view('campaigns',['fundraisingOn'=>$fundraisingOn,'pausedMessage'=>\App\Core\Fundraising::pausedMessage(),'page'=>$page,'campaigns'=>$fundraisingOn?$campaigns:[],'settings'=>Site::settings(),'seo'=>$this->seo($page)]);
     }
     public function campaign(string $slug): void
     {
         $c=Database::one('SELECT c.*,COALESCE(SUM(CASE WHEN d.status="approved" THEN d.amount ELSE 0 END),0) raised FROM campaigns c LEFT JOIN donations d ON d.campaign_id=c.id WHERE c.slug=? AND c.is_active=1 AND c.is_visible=1 GROUP BY c.id LIMIT 1',[$slug]);
         if(!$c){http_response_code(404);$this->view('404',['settings'=>Site::settings()]);return;}
-        $this->view('campaign-detail',['campaign'=>$c,'settings'=>Site::settings(),'seo'=>['title'=>$c['title'].' | 97 Foundation','description'=>$c['short_description']?:'Support this 97 Foundation campaign.']]);
+        $this->view('campaign-detail',['campaign'=>$c,'fundraisingOn'=>\App\Core\Fundraising::enabled(),'campaignOpen'=>\App\Core\Fundraising::campaignOpen($c),'pausedMessage'=>\App\Core\Fundraising::pausedMessage(),'settings'=>Site::settings(),'seo'=>['title'=>($c['meta_title']??'')?:$c['title'].' | 97 Foundation','description'=>$c['short_description']?:'Support this 97 Foundation campaign.','image'=>$c['cover_image']??'','type'=>'article','breadcrumbs'=>[['Home',''],['Campaigns','campaigns'],[$c['title'],'campaigns/'.$c['slug']]]]]);
     }
     public function contactPage(): void { $this->pageView('contact'); }
     private function pageView(string $slug): void
@@ -111,15 +113,33 @@ final class HomeController extends Controller
     public function sitemap(): void
     {
         header('Content-Type: application/xml; charset=UTF-8');
-        $urls=['','about','what-we-do','causes','campaigns','events','gallery','members','members/officials','members/past-officials','news','volunteer','donate','contact'];
-        $cmsPages=Database::all('SELECT slug FROM pages WHERE is_active=1'); foreach($cmsPages as $p)$urls[]=(string)$p['slug'];
-        $campaigns=Database::all('SELECT slug FROM campaigns WHERE is_active=1 AND is_visible=1 AND status<>"draft"'); foreach($campaigns as $c)$urls[]='campaigns/'.$c['slug'];
-        $posts=Database::all('SELECT slug FROM posts WHERE status="published" AND published_at<=NOW()'); foreach($posts as $p)$urls[]='news/'.$p['slug'];
-        $urls=array_values(array_unique($urls));
+        header('X-Robots-Tag: noindex');
+        $entries=[];
+        $add=function(string $path,?string $lastmod=null,string $freq='weekly',string $priority='0.6')use(&$entries){$entries[$path]=['lastmod'=>$lastmod,'freq'=>$freq,'priority'=>$priority];};
+        $add('',null,'daily','1.0');
+        foreach(['about','what-we-do','causes','events','gallery','members','members/officials','members/past-officials','volunteer','contact'] as $u)$add($u,null,'monthly','0.7');
+        $add('news',null,'daily','0.8');
+        if(\App\Core\Fundraising::donationsOpen())$add('donate',null,'monthly','0.8');
+        foreach(Database::all('SELECT slug,updated_at FROM pages WHERE is_active=1') as $p)$add((string)$p['slug'],$p['updated_at']??null,'monthly','0.6');
+        if(\App\Core\Fundraising::enabled()){
+            $add('campaigns',null,'weekly','0.8');
+            foreach(Database::all('SELECT slug,updated_at FROM campaigns WHERE is_active=1 AND is_visible=1 AND status<>"draft"') as $c)$add('campaigns/'.$c['slug'],$c['updated_at']??null,'weekly','0.7');
+        }
+        foreach(Database::all('SELECT slug,published_at,updated_at FROM posts WHERE status="published" AND published_at<=NOW() ORDER BY published_at DESC') as $p)$add('news/'.$p['slug'],$p['updated_at']??$p['published_at'],'monthly','0.7');
+        try{foreach(Database::all('SELECT slug FROM post_categories WHERE is_active=1') as $c)$add('news/category/'.$c['slug'],null,'weekly','0.5');}catch(\Throwable){}
         echo '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-        foreach($urls as $u) echo '<url><loc>'.e(absolute_url($u)).'</loc></url>'; echo '</urlset>'; exit;
+        foreach($entries as $u=>$m){echo '<url><loc>'.e(absolute_url($u)).'</loc>';if($m['lastmod']&&strtotime((string)$m['lastmod']))echo '<lastmod>'.date('Y-m-d',strtotime((string)$m['lastmod'])).'</lastmod>';echo '<changefreq>'.$m['freq'].'</changefreq><priority>'.$m['priority'].'</priority></url>';}
+        echo '</urlset>'; exit;
     }
-    public function robots(): void { header('Content-Type: text/plain; charset=UTF-8'); echo "User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /portal/\nDisallow: /login\nSitemap: ".absolute_url('sitemap.xml')."\n"; exit; }
+    public function robots(): void
+    {
+        header('Content-Type: text/plain; charset=UTF-8');
+        $base=rtrim((string)(parse_url(absolute_url(''),PHP_URL_PATH)?:''),'/');
+        $lines=['User-agent: *','Allow: /'];
+        foreach(['/admin/','/portal/','/login','/logout','/member/','/donate/payment/','/donate/online/','/verify','/chat/','/storage/','/app/','/database/','/tests/'] as $d)$lines[]='Disallow: '.$base.$d;
+        $lines[]='';$lines[]='Sitemap: '.absolute_url('sitemap.xml');
+        echo implode("\n",$lines)."\n"; exit;
+    }
     public function favicon(): void
     {
         $icon = foundation_favicon_url();

@@ -368,9 +368,22 @@ CREATE TABLE IF NOT EXISTS social_links (
   INDEX idx_social_active_sort (is_active,sort_order)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS post_categories (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  slug VARCHAR(140) NOT NULL UNIQUE,
+  description VARCHAR(400) NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_post_categories_active (is_active,sort_order)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS posts (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   post_type ENUM('news','blog') NOT NULL DEFAULT 'news',
+  category_id BIGINT UNSIGNED NULL,
   title VARCHAR(200) NOT NULL,
   slug VARCHAR(220) NOT NULL UNIQUE,
   excerpt VARCHAR(800) NULL,
@@ -387,6 +400,8 @@ CREATE TABLE IF NOT EXISTS posts (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_posts_created FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL,
   CONSTRAINT fk_posts_updated FOREIGN KEY(updated_by) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_posts_category FOREIGN KEY(category_id) REFERENCES post_categories(id) ON DELETE SET NULL,
+  INDEX idx_posts_category (category_id,status,published_at),
   INDEX idx_posts_public (status,published_at,post_type),
   INDEX idx_posts_featured (is_featured,status,published_at)
 ) ENGINE=InnoDB;
@@ -450,6 +465,9 @@ INSERT INTO settings(setting_group,setting_key,setting_value,is_public) VALUES
 ('foundation','portal_login_image_path','',1),
 ('foundation','member_login_image_path','',1),
 ('foundation','admin_login_background_path','',0),
+('fundraising','enabled','1',1),
+('fundraising','general_when_paused','1',1),
+('system','v72_applied','1',0),
 ('donation','instructions','Transfer to one of the accounts below, keep your payment reference, then submit the donation form with proof for verification.',1),
 ('seo','default_title','97 Foundation Sri Lanka | Community Support in Polonnaruwa Thambala',1),
 ('seo','social_image','',1),
@@ -611,3 +629,8 @@ CREATE TABLE IF NOT EXISTS foundation_officials (
   INDEX idx_officials_public (status,is_active,sort_order),
   CONSTRAINT fk_officials_creator FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+INSERT IGNORE INTO post_categories(name,slug,description,sort_order,is_active) VALUES
+('Announcements','announcements','Official notices and Foundation updates.',10,1),
+('Community Stories','community-stories','Stories from the people and families we support.',20,1),
+('Programmes & Activities','programmes-activities','Education, family support and volunteer activities.',30,1);

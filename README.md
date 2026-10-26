@@ -1,6 +1,18 @@
-# 97 Foundation Professional V7.1
+# 97 Foundation Professional V7.2
 
-Version: **Professional V7.1 — Header, Navigation, Hero & Admin Update**
+Version: **Professional V7.2 — Homepage, Donations, Fundraising, News & SEO Update**
+
+V7.2 redesigns the homepage with a calm motion system, makes a payment receipt mandatory for every bank-transfer donation, adds a global fundraising on/off switch, upgrades News & Blog (categories, readable web addresses, publish/unpublish, article pages with contents and related posts), adds share buttons and strengthens SEO. **The small database update applies automatically on the first page load** (or run `php database/upgrade_v7_2.php`). See `CHANGELOG.md`.
+
+## Testing
+
+- Quick checks: `php tests/v7_2_features_static.php` (and the other files in `tests/`).
+- Browser tests (Playwright): `npm install --no-save playwright && npx playwright install chromium`, then
+  `BASE_URL=http://localhost/97-foundation ADMIN_COOKIE="foundation97_session=<your session id>" node tests/e2e/site.e2e.js`.
+  Sign in to the Admin normally first and copy the `foundation97_session` cookie; the Admin CAPTCHA blocks automated sign-in.
+  The suite creates "E2E …" test records, so run it against a test copy of the database.
+
+Previous release: **Professional V7.1 — Header, Navigation, Hero & Admin Update**
 
 V7.1 delivers the new header (contacts, logo, foundation text image, Donate Now / Login), the new navigation with About Us and Members dropdowns, the five-image hero slider, Officials / Past Officials / What We Do pages and a professional Admin design. **Existing installations: run `php database/upgrade_v7_1.php` once, or use Admin → Branding & SEO → Apply Update.** See `CHANGELOG.md`.
 

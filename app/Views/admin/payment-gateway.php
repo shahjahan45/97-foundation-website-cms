@@ -5,6 +5,7 @@ $storageLabel=($vaultSource??'')==='server_environment'?'Server environment':(((
 ?>
 <div class="page-actions payment-setup-page-head"><div><h2>Easy Online Payment Setup</h2><p>Developer Integration · Connect PayHere in a few simple steps. Advanced API features stay optional.</p></div><div class="payment-head-actions"><a class="outline-link" href="<?=url('admin/online-payments')?>">Online Transactions</a><a class="outline-link" href="<?=url('donate?tab=online')?>" target="_blank">Preview Donation Page ↗</a></div></div>
 
+<?php $switchReturn='admin/developer/payment-gateway'; require __DIR__.'/_online-switch.php'; ?>
 <div class="easy-payment-overview">
   <section class="admin-panel easy-payment-status">
     <div class="easy-provider-mark">P</div>
@@ -43,7 +44,7 @@ $storageLabel=($vaultSource??'')==='server_environment'?'Server environment':(((
   <div class="easy-wizard-step">
     <span class="easy-step-number">3</span><div class="easy-step-content"><div class="easy-step-title"><b>Set donation limits and availability</b><small>These controls apply immediately to the public Online Payment form.</small></div>
       <div class="easy-limit-grid"><label><span>Minimum Donation (LKR)</span><div class="easy-money-input"><b>LKR</b><input type="number" min="1" step="0.01" name="min_amount" value="<?=e((string)($gateway['min_amount']??100))?>"></div></label><label><span>Maximum Donation (LKR)</span><div class="easy-money-input"><b>LKR</b><input type="number" min="1" step="0.01" name="max_amount" value="<?=e((string)($gateway['max_amount']??1000000))?>"></div></label></div>
-      <label class="easy-enable-switch"><input type="checkbox" name="enabled" value="1" <?=$enabled?'checked':''?>><span><b>Enable Online Payments</b><small>Donors will see the Online Payment option when checkout credentials are ready.</small></span></label>
+      <p class="v7-inline-note">Turn online payments on or off with the switch at the top of this page. Saving this form keeps the current setting.</p>
     </div>
   </div>
 

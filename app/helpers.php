@@ -222,3 +222,4 @@ function contact_icon_svg(string $kind, string $class=''): string {
 
 require_once __DIR__ . '/site_ui.php';
 require_once __DIR__ . '/admin_ui.php';
+require_once __DIR__ . '/content_ui.php';

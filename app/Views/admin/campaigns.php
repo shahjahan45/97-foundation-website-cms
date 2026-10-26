@@ -17,6 +17,28 @@
   </div>
 </div>
 
+<?php $fr=$fundraising??['enabled'=>'1','general_when_paused'=>'1','paused_message'=>''];$frOn=($fundraisingOn??true);?>
+<section class="admin-panel v7-fundraising-switch <?=$frOn?'is-on':'is-off'?>" aria-labelledby="fundraising-switch-title">
+  <form method="post" action="<?=url('admin/campaigns/fundraising')?>" class="v7-fr-form" data-fundraising-form>
+    <?=csrf_field()?>
+    <div class="v7-fr-state">
+      <span class="v7-fr-dot" aria-hidden="true"></span>
+      <div><h3 id="fundraising-switch-title">Public fundraising is <?=$frOn?'on':'paused'?></h3>
+      <p><?=$frOn?'Active, public campaigns appear on the website and accept donations.':'Campaign sections are hidden from the website and campaign donations are closed. Campaigns, totals and donation records are kept.'?></p></div>
+    </div>
+    <div class="v7-fr-controls">
+      <fieldset class="v7-segment" aria-label="Public fundraising">
+        <label><input type="radio" name="enabled" value="1" <?=$frOn?'checked':''?>><span>On</span></label>
+        <label><input type="radio" name="enabled" value="0" <?=$frOn?'':'checked'?>><span>Paused</span></label>
+      </fieldset>
+      <button class="admin-btn" type="submit">Save</button>
+    </div>
+    <div class="v7-fr-options" data-fr-options <?=$frOn?'hidden':''?>>
+      <label class="toggle-line"><input type="checkbox" name="general_when_paused" value="1" <?=($fr['general_when_paused']??'1')!=='0'?'checked':''?>><span>Keep accepting general donations to the Foundation while campaigns are paused</span></label>
+      <label><span>Message shown to visitors while paused</span><textarea name="paused_message" rows="2" maxlength="400" placeholder="Our fundraising campaigns are paused at the moment. Thank you for your support — please check back soon."><?=e($fr['paused_message']??'')?></textarea></label>
+    </div>
+  </form>
+</section>
 <div class="management-layout">
   <section class="admin-panel sticky-form" id="campaign-form">
     <div class="panel-head">
