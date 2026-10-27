@@ -8,6 +8,9 @@ $path=current_path();
 try{$pendingVolunteerCount=(int)(\App\Core\Database::one('SELECT COUNT(*) c FROM volunteers WHERE status="pending"')['c']??0);}catch(\Throwable){$pendingVolunteerCount=0;}
 try{$pendingMemberCount=(int)(\App\Core\Database::one('SELECT COUNT(*) c FROM users WHERE role="member" AND status="pending"')['c']??0);}catch(\Throwable){$pendingMemberCount=0;}
 try{$openLiveChatCount=(int)(\App\Core\Database::one('SELECT COUNT(*) c FROM chat_conversations WHERE status<>"closed"')['c']??0);}catch(\Throwable){$openLiveChatCount=0;}
+$canScholarships=\App\Core\Auth::can('manage_scholarships');
+try{$pendingScholarshipCount=$canScholarships?(int)(\App\Core\Database::one('SELECT COUNT(*) c FROM scholarship_applications WHERE status="pending"')['c']??0):0;}catch(\Throwable){$pendingScholarshipCount=0;}
+$isEducation=str_starts_with($path,'/admin/scholarships');
 $isFundraising=str_starts_with($path,'/admin/campaigns')||str_starts_with($path,'/admin/donations')||str_starts_with($path,'/admin/donation-settings')||str_starts_with($path,'/admin/online-payments');
 $isPeople=str_starts_with($path,'/admin/volunteers')||str_starts_with($path,'/admin/members')||str_starts_with($path,'/admin/officials');
 $isSupport=str_starts_with($path,'/admin/messages')||str_starts_with($path,'/admin/live-chat');
@@ -63,6 +66,14 @@ $brandLogo=$logoEnabled?brand_logo_url():'';
                 <a class="<?=nav_active('admin/volunteers/applications')?>" href="<?=url('admin/volunteers/applications')?>" title="Volunteer Registration Management"><span class="side-sub-icon"><?=admin_icon('registration')?></span><span>Volunteer Applications</span><?php if($pendingVolunteerCount):?><em><?=$pendingVolunteerCount?></em><?php endif;?></a>
             </div>
         </div>
+
+        <?php if($canScholarships):?><div class="side-group <?=$isEducation?'open active':''?>" data-side-group>
+            <button type="button" class="side-parent" data-side-toggle aria-expanded="<?=$isEducation?'true':'false'?>"><span class="side-nav-icon"><?=admin_icon('graduation')?></span><span>Education Support</span><?php if($pendingScholarshipCount):?><em><?=$pendingScholarshipCount?></em><?php endif;?><i><?=admin_icon('chevron')?></i></button>
+            <div class="side-submenu">
+                <a class="<?=$isEducation?'active':''?>" href="<?=url('admin/scholarships')?>"><span class="side-sub-icon"><?=admin_icon('registration')?></span><span>Scholarship Applications</span><?php if($pendingScholarshipCount):?><em><?=$pendingScholarshipCount?></em><?php endif;?></a>
+                <?php if(\App\Core\Auth::can('manage_content')):?><a href="<?=url('admin/content?tab=pages')?>"><span class="side-sub-icon"><?=admin_icon('edit')?></span><span>Scholarship Page Text</span></a><?php endif;?>
+            </div>
+        </div><?php endif;?>
 
         <div class="side-group <?=$isSupport?'open active':''?>" data-side-group>
             <button type="button" class="side-parent" data-side-toggle aria-expanded="<?=$isSupport?'true':'false'?>"><span class="side-nav-icon"><?=admin_icon('support')?></span><span>Support & Messages</span><?php if($openLiveChatCount):?><em><?=$openLiveChatCount?></em><?php endif;?><i><?=admin_icon('chevron')?></i></button>

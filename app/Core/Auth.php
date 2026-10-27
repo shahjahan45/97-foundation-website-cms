@@ -55,7 +55,7 @@ final class Auth
     {
         $u=self::user(); if(!$u) return false; if($u['role']==='super_admin') return true;
         $map=[
-            'administrator'=>['view_donations','approve_donations','manage_campaigns','manage_volunteers','approve_volunteers','manage_content','manage_settings','manage_gallery','manage_messages','view_audit_logs','view_online_payments','manage_payment_gateway'],
+            'administrator'=>['view_donations','approve_donations','manage_campaigns','manage_volunteers','approve_volunteers','manage_content','manage_settings','manage_gallery','manage_messages','view_audit_logs','view_online_payments','manage_payment_gateway','manage_scholarships'],
             'finance_manager'=>['view_donations','approve_donations','manage_campaigns','view_online_payments'],
             'volunteer_manager'=>['manage_volunteers','approve_volunteers','manage_messages'],
             'content_manager'=>['manage_content','manage_gallery'],

@@ -28,6 +28,7 @@ App\Core\App::setConfig($config);
 // V7.2: apply the small, idempotent database update automatically on the first web request.
 if (PHP_SAPI !== 'cli') {
     try { App\Core\Upgrade72::autoApply(); } catch (\Throwable $e) { error_log('V7.2 database update could not run: ' . $e->getMessage()); }
+    try { App\Core\Upgrade73::autoApply(); } catch (\Throwable $e) { error_log('V7.3 database update could not run: ' . $e->getMessage()); }
 }
 
 // Production-safe exception/fatal handling. Full technical details stay in the

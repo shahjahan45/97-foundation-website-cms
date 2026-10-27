@@ -53,6 +53,7 @@ function admin_icon(string $name, string $class = ''): string
         'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
         'power' => '<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
         'slider' => '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3 15 5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="9.5" r="1.4"/>',
+        'graduation' => '<path d="m2.5 9.5 9.5-5 9.5 5-9.5 5Z"/><path d="M6.5 11.6v4.6c0 1.5 2.5 3.3 5.5 3.3s5.5-1.8 5.5-3.3v-4.6"/><path d="M21.5 9.5v5"/>',
     ];
     $body = $paths[$name] ?? $paths['dashboard'];
     return '<svg class="' . e(trim('ai ' . $class)) . '" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $body . '</svg>';
@@ -64,6 +65,7 @@ function admin_breadcrumb(string $path, string $title): array
     $map = [
         '/admin/campaigns' => 'Fundraising', '/admin/donations' => 'Fundraising', '/admin/donation-settings' => 'Fundraising', '/admin/online-payments' => 'Fundraising',
         '/admin/members' => 'People & Community', '/admin/volunteers' => 'People & Community', '/admin/officials' => 'People & Community',
+        '/admin/scholarships' => 'Education Support',
         '/admin/messages' => 'Support & Messages', '/admin/live-chat' => 'Support & Messages',
         '/admin/content' => 'Content & Website', '/admin/causes' => 'Content & Website', '/admin/events' => 'Content & Website', '/admin/gallery' => 'Content & Website', '/admin/posts' => 'Content & Website', '/admin/branding' => 'Content & Website',
         '/admin/developer' => 'Developer Integration',

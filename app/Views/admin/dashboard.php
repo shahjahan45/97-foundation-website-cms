@@ -14,6 +14,13 @@
     <div class="v7-dash-switch"><span class="v7-fr-dot" aria-hidden="true"></span><div><b>Campaign fundraising · <?=$fr['enabled']?'On':'Paused'?></b><small><?=$fr['enabled']?'Active campaigns accept donations.':($fr['general']?'General donations are still accepted.':'All new donations are closed.')?></small></div></div><a class="v7-dash-switch <?=!empty($fr['online'])?'':'is-muted'?>" href="<?=url('admin/developer/payment-gateway')?>"><span class="v7-fr-dot" aria-hidden="true"></span><div><b>Online card payments · <?=!empty($fr['online'])?'On':'Off'?></b><small><?=!empty($fr['online'])?'Donors can pay by card through PayHere.':'Turn on in Easy Payment Setup.'?></small></div></a>
   </section>
   <?php endif;?>
+  <?php if(is_array($scholarships??null)):$sc=$scholarships;?>
+  <section class="admin-panel v7-dash-card <?=(int)($sc['pending']??0)>0?'is-attention':''?>">
+    <div class="panel-head"><div><h3>Scholarship applications</h3><span><?=$sc['open']?'Online applications are open.':'Online applications are closed.'?></span></div><a href="<?=url('admin/scholarships')?>">Review →</a></div>
+    <div class="v7-dash-figures is-three"><a href="<?=url('admin/scholarships?status=pending')?>"><b class="<?=(int)($sc['pending']??0)>0?'is-warn':''?>"><?=(int)($sc['pending']??0)?></b><small>New</small></a><a href="<?=url('admin/scholarships?status=under_review')?>"><b><?=(int)($sc['in_review']??0)?></b><small>In review</small></a><a href="<?=url('admin/scholarships?eligibility=eligible')?>"><b><?=(int)($sc['qualified']??0)?></b><small>Meet criteria</small></a></div>
+    <p class="v7-dash-note">The team decides every application. <?=(int)($sc['approved']??0)?> approved so far.</p>
+  </section>
+  <?php endif;?>
   <?php if($canContent):?>
   <section class="admin-panel v7-dash-card">
     <div class="panel-head"><div><h3>News &amp; Blog</h3><span>Publishing at a glance.</span></div><a href="<?=url('admin/posts')?>">Write article →</a></div>

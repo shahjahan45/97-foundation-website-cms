@@ -12,6 +12,7 @@ use App\Controllers\PostController;
 use App\Controllers\LiveChatController;
 use App\Controllers\MemberRegistrationController;
 use App\Controllers\OnlineDonationController;
+use App\Controllers\ScholarshipController;
 use App\Controllers\Portal\AuthController as PortalAuthController;
 use App\Controllers\Portal\PortalController;
 use App\Controllers\Portal\NotificationPortalController;
@@ -38,6 +39,7 @@ use App\Controllers\Admin\PostAdminController;
 use App\Controllers\Admin\LiveChatAdminController;
 use App\Controllers\Admin\PaymentGatewayAdminController;
 use App\Controllers\Admin\OnlinePaymentAdminController;
+use App\Controllers\Admin\ScholarshipAdminController;
 
 $r = new Router();
 $r->get('/', [HomeController::class,'index']);
@@ -59,6 +61,9 @@ $r->post('/member/login', [MemberRegistrationController::class,'authenticate']);
 $r->get('/news', [PostController::class,'index']);
 $r->get('/news/category/{slug}', [PostController::class,'category']);
 $r->get('/news/{slug}', [PostController::class,'show']);
+$r->get('/scholarships', [ScholarshipController::class,'index']);
+$r->post('/scholarships/apply', [ScholarshipController::class,'apply']);
+$r->get('/scholarships/submitted', [ScholarshipController::class,'submitted']);
 $r->get('/donate', [DonationController::class,'index']);
 $r->post('/donate', [DonationController::class,'store']);
 $r->post('/donate/online/review', [OnlineDonationController::class,'review']);
@@ -203,6 +208,15 @@ $r->get('/admin/developer/payment-gateway', [PaymentGatewayAdminController::clas
 $r->post('/admin/developer/payment-gateway/save', [PaymentGatewayAdminController::class,'save']);
 $r->post('/admin/developer/payment-gateway/test', [PaymentGatewayAdminController::class,'test']);
 $r->post('/admin/developer/payment-gateway/toggle', [PaymentGatewayAdminController::class,'toggle']);
+$r->get('/admin/scholarships', [ScholarshipAdminController::class,'index']);
+$r->get('/admin/scholarships/export', [ScholarshipAdminController::class,'export']);
+$r->get('/admin/scholarships/view/{id}', [ScholarshipAdminController::class,'details']);
+$r->post('/admin/scholarships/evaluate', [ScholarshipAdminController::class,'evaluate']);
+$r->post('/admin/scholarships/note', [ScholarshipAdminController::class,'note']);
+$r->post('/admin/scholarships/reveal', [ScholarshipAdminController::class,'reveal']);
+$r->post('/admin/scholarships/find-nic', [ScholarshipAdminController::class,'findNic']);
+$r->post('/admin/scholarships/settings', [ScholarshipAdminController::class,'settings']);
+$r->post('/admin/scholarships/delete', [ScholarshipAdminController::class,'delete']);
 
 // Dynamic CMS page route must remain last.
 $r->get('/{slug}', [HomeController::class,'dynamicPage']);

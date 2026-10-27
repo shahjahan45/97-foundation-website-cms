@@ -136,7 +136,7 @@ final class HomeController extends Controller
         header('Content-Type: text/plain; charset=UTF-8');
         $base=rtrim((string)(parse_url(absolute_url(''),PHP_URL_PATH)?:''),'/');
         $lines=['User-agent: *','Allow: /'];
-        foreach(['/admin/','/portal/','/login','/logout','/member/','/donate/payment/','/donate/online/','/verify','/chat/','/storage/','/app/','/database/','/tests/'] as $d)$lines[]='Disallow: '.$base.$d;
+        foreach(['/admin/','/portal/','/login','/logout','/member/','/donate/payment/','/donate/online/','/scholarships/submitted','/verify','/chat/','/storage/','/app/','/database/','/tests/'] as $d)$lines[]='Disallow: '.$base.$d;
         $lines[]='';$lines[]='Sitemap: '.absolute_url('sitemap.xml');
         echo implode("\n",$lines)."\n"; exit;
     }

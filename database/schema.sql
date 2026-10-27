@@ -634,3 +634,53 @@ INSERT IGNORE INTO post_categories(name,slug,description,sort_order,is_active) V
 ('Announcements','announcements','Official notices and Foundation updates.',10,1),
 ('Community Stories','community-stories','Stories from the people and families we support.',20,1),
 ('Programmes & Activities','programmes-activities','Education, family support and volunteer activities.',30,1);
+
+-- V7.3 Student Scholarship & Education Support applications (NIC numbers stored encrypted)
+CREATE TABLE IF NOT EXISTS scholarship_applications (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  reference VARCHAR(24) NOT NULL UNIQUE,
+  student_name VARCHAR(150) NOT NULL,
+  student_grade VARCHAR(30) NOT NULL,
+  education_level VARCHAR(20) NOT NULL,
+  guardian_name VARCHAR(150) NOT NULL,
+  guardian_nic_enc TEXT NOT NULL,
+  guardian_nic_hash CHAR(64) NOT NULL,
+  guardian_nic_last4 VARCHAR(4) NOT NULL,
+  mobile VARCHAR(20) NOT NULL,
+  address VARCHAR(600) NOT NULL,
+  purpose ENUM('ol','al','university','general') NOT NULL,
+  status ENUM('pending','under_review','shortlisted','approved','rejected') NOT NULL DEFAULT 'pending',
+  eligibility ENUM('not_assessed','eligible','not_eligible') NOT NULL DEFAULT 'not_assessed',
+  rating TINYINT UNSIGNED NULL,
+  selection_comment TEXT NULL,
+  possible_duplicate TINYINT(1) NOT NULL DEFAULT 0,
+  consent_at DATETIME NOT NULL,
+  submit_ip_hash CHAR(64) NULL,
+  reviewed_by BIGINT UNSIGNED NULL,
+  reviewed_at DATETIME NULL,
+  decided_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sch_reviewer FOREIGN KEY(reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_sch_status (status, created_at),
+  INDEX idx_sch_purpose (purpose, education_level),
+  INDEX idx_sch_nic (guardian_nic_hash),
+  INDEX idx_sch_ip (submit_ip_hash, created_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS scholarship_reviews (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  application_id BIGINT UNSIGNED NOT NULL,
+  admin_id BIGINT UNSIGNED NULL,
+  kind ENUM('note','status','evaluation','comment','access') NOT NULL DEFAULT 'note',
+  old_status VARCHAR(30) NULL,
+  new_status VARCHAR(30) NULL,
+  body TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_schr_app FOREIGN KEY(application_id) REFERENCES scholarship_applications(id) ON DELETE CASCADE,
+  CONSTRAINT fk_schr_admin FOREIGN KEY(admin_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_schr_app (application_id, created_at)
+) ENGINE=InnoDB;
+
+-- The Scholarships, Privacy Policy and Terms & Conditions pages are added by app/Core/Upgrade73.php
+-- on the first web request (or `php database/upgrade_v7_3.php`).

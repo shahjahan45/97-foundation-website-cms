@@ -1,5 +1,5 @@
 /*
- * 97 Foundation V7.2 — end-to-end tests (Playwright, real browser against the running site).
+ * 97 Foundation V7.2–V7.3 — end-to-end tests (Playwright, real browser against the running site).
  *
  * Setup (once):   npm install --no-save playwright && npx playwright install chromium
  * Run:            BASE_URL=http://localhost/97-foundation ADMIN_COOKIE="foundation97_session=<id>" node tests/e2e/site.e2e.js
@@ -498,6 +498,7 @@ test('Role limits: a content manager can publish but cannot see donations or rec
   const admin = await adminPage(browser);
   await admin.goto(u('/admin/administrators'));
   const email = `e2e-content-${RUN}@example.test`;
+  state.contentEmail = email;
   const f = admin.locator('[data-admin-form]');
   await f.locator('input[name="name"]').fill('E2E Content Manager');
   await f.locator('input[name="email"]').fill(email);
@@ -532,6 +533,289 @@ test('SEO basics: titles, descriptions, canonical, social tags, robots and sitem
   assert.match(robots, /Disallow: .*\/admin\//); assert.match(robots, /Sitemap: /);
   const sm = await (await page.request.get(u('/sitemap.xml'))).text();
   assert.match(sm, /<urlset/); assert.ok(!/\/admin/.test(sm), 'no admin URLs in sitemap');
+  await ctx.close();
+});
+
+/* ------------------------------------------------------------------ V7.3 Scholarships & footer */
+const SCH_NIC = '912345678V'; // differs from the example shown in the form placeholder
+const SCH_TAG = RUN.replace(/\d/g, d => 'abcdefghij'[d]); // names may only contain letters
+async function fillScholarship(page, o = {}) {
+  await page.locator('#sch-student_name').fill(o.student || `Test Student ${SCH_TAG}`);
+  await page.locator('#sch-student_grade').selectOption(o.grade || 'grade_12');
+  await page.locator('#sch-guardian_name').fill(o.guardian || `Test Guardian ${SCH_TAG}`);
+  await page.locator('#sch-guardian_nic').fill(o.nic || SCH_NIC);
+  await page.locator('#sch-mobile').fill(o.mobile || '+94 71 234 5678');
+  await page.locator('#sch-address').fill(o.address || 'No. 12, Temple Road, Thambala, Polonnaruwa');
+  await page.locator('#sch-purpose').selectOption(o.purpose || 'al');
+  await page.locator('label[for="sch-consent"]').click();
+}
+async function schToken(page) { await page.goto(u('/scholarships')); return page.locator('[data-scholarship-form] input[name="_token"]').inputValue(); }
+
+test('Scholarship form: browser validation shows clear, accessible errors', async ({ browser }) => {
+  const errors = []; const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await newPage(ctx, errors);
+  assert.equal((await page.goto(u('/scholarships'), { waitUntil: 'networkidle' })).status(), 200);
+  assert.ok(await noHorizontalScroll(page), 'no sideways scrolling on a phone');
+  const options = await page.locator('#sch-purpose option').allInnerTexts();
+  for (const o of ['G.C.E. Ordinary Level (O/L)', 'G.C.E. Advanced Level (A/L)', 'University Education', 'General Education Support']) assert.ok(options.includes(o), 'purpose option ' + o);
+  await page.locator('[data-sch-submit]').click();
+  const summary = page.locator('[data-sch-summary]');
+  await summary.waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => document.activeElement && document.activeElement.hasAttribute('data-sch-summary')), true, 'error summary receives focus');
+  assert.equal(await summary.locator('li').count(), 8, 'all eight required items listed');
+  assert.match(page.url(), /\/scholarships$/, 'nothing was submitted');
+  for (const f of ['student_name', 'student_grade', 'guardian_name', 'guardian_nic', 'mobile', 'address', 'purpose']) assert.equal(await page.locator('#sch-' + f).getAttribute('aria-invalid'), 'true', f + ' marked invalid');
+  // Error messages are linked to their fields for screen readers.
+  assert.match(await page.locator('#sch-guardian_nic').getAttribute('aria-describedby'), /sch-guardian_nic-error/);
+  await page.locator('#sch-guardian_nic').fill('12345');
+  await page.locator('#sch-mobile').focus();
+  assert.match(await page.locator('#sch-guardian_nic-error').innerText(), /valid NIC/i);
+  await page.locator('#sch-guardian_nic').fill('198532002937');
+  await page.locator('#sch-mobile').fill('0112345678');
+  await page.locator('#sch-address').focus();
+  assert.equal(await page.locator('#sch-guardian_nic-error').isHidden(), true, 'error clears once the NIC is valid');
+  assert.match(await page.locator('#sch-mobile-error').innerText(), /mobile number/i, 'landline numbers are rejected');
+  await summary.locator('a[href="#sch-address"]').click();
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'sch-address', 'summary links move focus to the field');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('Scholarship form: the server re-checks everything sent around the browser checks', async ({ browser }) => {
+  const ctx = await browser.newContext(); const page = await ctx.newPage();
+  const token = await schToken(page);
+  const student = `E2E Bypass Student ${RUN}`;
+  const res = await page.request.post(u('/scholarships/apply'), { form: { _token: token, student_name: student, student_grade: 'grade_99', guardian_name: 'X', guardian_nic: '123456789Z', mobile: '0112345678', address: 'short', purpose: 'holiday' }, maxRedirects: 0 });
+  assert.equal(res.status(), 302);
+  assert.ok(!/123456789|Bypass/.test(res.headers()['location'] || ''), 'no personal data in the redirect address');
+  await page.goto(u('/scholarships'));
+  const summary = page.locator('[data-sch-summary]');
+  assert.equal(await summary.isVisible(), true, 'server errors are shown');
+  const text = await summary.innerText();
+  for (const re of [/grade/i, /letters only/i, /valid NIC/i, /mobile/i, /address/i, /type of scholarship/i, /declaration/i]) assert.match(text, re);
+  assert.equal(await page.locator('#sch-student_name').inputValue(), student, 'typed details are kept');
+  // Missing CSRF token and the hidden spam trap are both refused.
+  const noToken = await page.request.post(u('/scholarships/apply'), { form: { student_name: student }, maxRedirects: 0 });
+  assert.ok([403, 419, 302].includes(noToken.status()), 'request without a token is refused');
+  const trap = await page.request.post(u('/scholarships/apply'), { form: { _token: await schToken(page), website: 'http://spam.example', student_name: `Spam Student ${SCH_TAG}`, student_grade: 'grade_10', guardian_name: 'Spam Sender', guardian_nic: '853202937V', mobile: '0771234567', address: 'Spam address 123 road', purpose: 'ol', consent: '1' }, maxRedirects: 0 });
+  assert.equal(trap.status(), 302);
+  const admin = await adminPage(browser);
+  for (const q of [student, `Spam Student ${SCH_TAG}`]) {
+    await admin.goto(u('/admin/scholarships?q=' + encodeURIComponent(q)));
+    assert.equal(await admin.locator('.sch-table tbody tr').count(), 0, 'no record created for ' + q);
+  }
+  await admin.close(); await ctx.close();
+});
+
+test('A valid scholarship application is saved as Pending and shows a reference', async ({ browser }) => {
+  const errors = []; const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await newPage(ctx, errors);
+  await page.goto(u('/scholarships'));
+  await fillScholarship(page);
+  await page.locator('#sch-guardian_nic').fill('912345678v');
+  await page.locator('#sch-address').focus();
+  assert.equal(await page.locator('#sch-guardian_nic').inputValue(), SCH_NIC, 'NIC is tidied to upper case');
+  await Promise.all([page.waitForURL(/scholarships\/submitted/), page.locator('[data-sch-submit]').click()]);
+  assert.match(await page.locator('h1').innerText(), /submitted/i);
+  state.schRef = (await page.locator('[data-sch-ref]').innerText()).trim();
+  assert.match(state.schRef, /^SCH-\d{2}-[A-Z2-9]{6}$/);
+  assert.ok(!page.url().includes(SCH_NIC) && !page.url().includes(SCH_TAG), 'no personal data in the address bar');
+  const html = await page.content();
+  assert.ok(!html.includes(SCH_NIC), 'the NIC is not echoed back');
+  assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/);
+  assert.match(await page.locator('.sch7-done-meta').innerText(), /Pending review/);
+  await page.reload();
+  assert.match(page.url(), /\/scholarships$/, 'the confirmation is shown once only');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('Administrators see new applications with masked NIC and can filter them', async ({ browser }) => {
+  if (!state.schRef) return 'skipped: no application from the previous test';
+  const admin = await adminPage(browser);
+  await admin.goto(u('/admin/scholarships'));
+  assert.ok(await admin.locator('.sidebar a[href$="admin/scholarships"]').count(), 'sidebar link');
+  const row = admin.locator('.sch-table tbody tr', { hasText: state.schRef });
+  assert.equal(await row.count(), 1, 'new application listed');
+  const text = await row.innerText();
+  assert.match(text, /Pending/); assert.match(text, /•+678V/, 'NIC masked');
+  assert.ok(!(await admin.content()).includes(SCH_NIC), 'full NIC never appears in the list');
+  const filter = async (qs, present) => { await admin.goto(u('/admin/scholarships?' + qs)); assert.equal(await admin.locator('.sch-table tbody tr', { hasText: state.schRef }).count(), present ? 1 : 0, qs); };
+  await filter('purpose=al', true); await filter('purpose=university', false);
+  await filter('level=al', true); await filter('level=primary', false);
+  await filter('status=pending', true); await filter('status=approved', false);
+  await filter('q=' + encodeURIComponent('Test Student ' + SCH_TAG), true);
+  await filter('q=0712345678', true);
+  // NIC search is posted, so the number never lands in the address bar.
+  await admin.goto(u('/admin/scholarships'));
+  await admin.locator('.sch-nic-find summary').click();
+  await admin.locator('.sch-nic-find input[name="nic"]').fill('912345678v');
+  await Promise.all([admin.waitForNavigation(), admin.locator('.sch-nic-find button').click()]);
+  assert.match(admin.url(), /nic=match$/); assert.ok(!admin.url().includes('912345678'));
+  assert.equal(await admin.locator('.sch-table tbody tr', { hasText: state.schRef }).count(), 1, 'found by NIC');
+  state.schUrl = await admin.locator('.sch-table tbody tr', { hasText: state.schRef }).locator('a.sch-ref').getAttribute('href');
+  await admin.close();
+});
+
+test('Review workflow: notes, status changes and no approval without an eligibility decision', async ({ browser }) => {
+  if (!state.schUrl) return 'skipped: no application to review';
+  const admin = await adminPage(browser);
+  await admin.goto(state.schUrl.startsWith('http') ? state.schUrl : u(state.schUrl));
+  assert.match(await admin.locator('.sch-summary').innerText(), /Pending/);
+  assert.match(await admin.locator('.sch-summary').innerText(), /Not assessed/i);
+  // Internal note
+  await admin.locator('#sch-note').fill(`E2E note ${RUN}: called the parent, details confirmed.`);
+  await Promise.all([admin.waitForNavigation(), admin.locator('.sch-note-form button').click()]);
+  assert.match(await admin.locator('.sch-timeline').innerText(), new RegExp(`E2E note ${RUN}`));
+  // Approval is blocked in the browser until the student is marked as meeting the criteria…
+  const form = admin.locator('[data-sch-review]');
+  await form.locator('label.is-status.is-approved').click();
+  await form.locator('textarea[name="selection_comment"]').fill('Trying to approve without assessing.');
+  await form.locator('button[type="submit"]').click();
+  assert.equal(await form.locator('[data-sch-guard]').isVisible(), true, 'approval guard shown');
+  await admin.waitForTimeout(300);
+  assert.match(await admin.locator('.sch-summary').innerText(), /Pending/, 'still pending');
+  // …and by the server when the browser check is bypassed.
+  const id = (state.schUrl.match(/view\/(\d+)/) || [])[1];
+  const token = await form.locator('input[name="_token"]').inputValue();
+  const r = await admin.request.post(u('/admin/scholarships/evaluate'), { form: { _token: token, id, status: 'approved', eligibility: 'not_assessed', rating: '', selection_comment: 'Bypass' }, maxRedirects: 0 });
+  assert.equal(r.status(), 302);
+  await admin.reload();
+  assert.match(await admin.locator('.sch-summary').innerText(), /Pending/, 'server refused automatic approval');
+  assert.match(await flashText(admin), /Meets the criteria/);
+  // Review: under review + meets criteria + rating
+  await admin.locator('[data-sch-review] label.is-eligible').click();
+  await admin.locator('[data-sch-review] .sch-rate', { hasText: '4★' }).click();
+  await admin.locator('[data-sch-review] label.is-status.is-under_review').click();
+  await admin.locator('[data-sch-review] textarea[name="selection_comment"]').fill('');
+  await Promise.all([admin.waitForNavigation(), admin.locator('[data-sch-review] button[type="submit"]').click()]);
+  const summary = await admin.locator('.sch-summary').innerText();
+  assert.match(summary, /Under Review/); assert.match(summary, /Meets the criteria/);
+  assert.match(await admin.locator('.sch-timeline').innerText(), /Status changed/);
+  // A decision needs a selection comment.
+  await admin.locator('[data-sch-review] label.is-status.is-approved').click();
+  await admin.locator('[data-sch-review] button[type="submit"]').click();
+  assert.equal(await admin.locator('[data-sch-comment-guard]').isVisible(), true, 'comment required for a decision');
+  await admin.locator('[data-sch-review] textarea[name="selection_comment"]').fill(`E2E decision ${RUN}: meets income and results criteria; agreed at the selection meeting.`);
+  await Promise.all([admin.waitForNavigation(), admin.locator('[data-sch-review] button[type="submit"]').click()]);
+  assert.match(await admin.locator('.sch-summary').innerText(), /Approved/);
+  assert.match(await admin.locator('.sch-timeline').innerText(), /Selection comment/);
+  await admin.goto(u('/admin/scholarships?status=approved'));
+  assert.equal(await admin.locator('.sch-table tbody tr', { hasText: state.schRef }).count(), 1, 'approved filter');
+  await admin.close();
+});
+
+test('Showing the full NIC is a deliberate, recorded action', async ({ browser }) => {
+  if (!state.schUrl) return 'skipped: no application';
+  const admin = await adminPage(browser);
+  await admin.goto(state.schUrl.startsWith('http') ? state.schUrl : u(state.schUrl));
+  assert.ok(!(await admin.content()).includes(SCH_NIC), 'masked by default');
+  await Promise.all([admin.waitForNavigation(), admin.locator('[data-sch-reveal]').click()]);
+  assert.equal((await admin.locator('[data-sch-nic-revealed]').innerText()).trim(), SCH_NIC, 'decrypted on request');
+  assert.match(await admin.locator('.sch-timeline').innerText(), /Sensitive data viewed/);
+  const csv = await admin.request.get(u('/admin/scholarships/export'));
+  assert.equal(csv.status(), 200);
+  assert.match(csv.headers()['content-type'], /text\/csv/);
+  const body = await csv.text();
+  assert.ok(body.includes(state.schRef), 'export includes the application');
+  assert.ok(!body.includes(SCH_NIC), 'export masks NIC numbers');
+  await admin.close();
+});
+
+test('Scholarship data is limited to authorised administrators', async ({ browser }) => {
+  const ctx = await browser.newContext(); const page = await ctx.newPage();
+  for (const p of ['/admin/scholarships', '/admin/scholarships/view/1', '/admin/scholarships/export']) {
+    const r = await page.request.get(u(p), { maxRedirects: 0 });
+    assert.equal(r.status(), 302, p + ' must redirect to sign-in');
+    assert.match(r.headers()['location'] || '', /admin\/login/);
+  }
+  const r = await page.request.post(u('/admin/scholarships/evaluate'), { form: { id: '1', status: 'approved' }, maxRedirects: 0 });
+  assert.ok([302, 403, 419].includes(r.status()), 'anonymous POST blocked');
+  const robots = await (await page.request.get(u('/robots.txt'))).text();
+  assert.match(robots, /Disallow: .*\/scholarships\/submitted/);
+  const sm = await (await page.request.get(u('/sitemap.xml'))).text();
+  assert.match(sm, /\/scholarships</); assert.ok(!/scholarships\/submitted|admin\/scholarships/.test(sm));
+  await ctx.close();
+  if (!process.env.ROLE_LOGIN_URL || !state.contentEmail) return 'partly skipped: role sign-in unavailable';
+  const cm = await adminContext(browser, state.contentEmail); const cp = await cm.newPage();
+  assert.equal((await cp.request.get(u('/admin/scholarships'), { maxRedirects: 0 })).status(), 403, 'content manager cannot list applications');
+  assert.equal((await cp.request.get(u('/admin/scholarships/export'), { maxRedirects: 0 })).status(), 403, 'content manager cannot export');
+  await cp.goto(u('/admin/posts'));
+  assert.equal(await cp.locator('.sidebar a[href$="admin/scholarships"]').count(), 0, 'no sidebar link for other roles');
+  await cm.close();
+});
+
+test('Closing applications hides the form without touching saved applications', async ({ browser }) => {
+  const admin = await adminPage(browser);
+  admin.on('dialog', d => d.accept());
+  await admin.goto(u('/admin/scholarships'));
+  if (await admin.locator('.sch-intake.is-open').count()) await Promise.all([admin.waitForNavigation(), admin.locator('.sch-intake button').click()]);
+  assert.equal(await admin.locator('.sch-intake.is-closed').count(), 1);
+  const ctx = await browser.newContext(); const page = await ctx.newPage();
+  await page.goto(u('/scholarships'));
+  assert.equal(await page.locator('[data-scholarship-form]').count(), 0, 'form hidden');
+  assert.match(await page.locator('.sch7-closed').innerText(), /closed/i);
+  if (state.schRef) { await admin.goto(u('/admin/scholarships')); assert.equal(await admin.locator('.sch-table tbody tr', { hasText: state.schRef }).count(), 1, 'saved applications kept'); }
+  await Promise.all([admin.waitForNavigation(), admin.locator('.sch-intake button').click()]);
+  assert.equal(await admin.locator('.sch-intake.is-open').count(), 1);
+  await page.goto(u('/scholarships'));
+  assert.equal(await page.locator('[data-scholarship-form]').count(), 1, 'form back');
+  await admin.close(); await ctx.close();
+});
+
+test('Scholarship page: SEO, structured data and navigation', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }); const page = await ctx.newPage();
+  await page.goto(u('/scholarships'));
+  assert.match(await page.title(), /Scholarships/);
+  assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /^index/);
+  assert.equal(await page.locator('h1').count(), 1);
+  const ld = (await page.locator('script[type="application/ld+json"]').allTextContents()).join(' ');
+  assert.match(ld, /FAQPage/); assert.match(ld, /BreadcrumbList/);
+  await page.locator('.nav7-item.has-children', { hasText: 'About Us' }).hover();
+  assert.ok(await page.locator('.nav7-dropdown a[href$="/scholarships"]').isVisible(), 'menu link');
+  await ctx.close();
+});
+
+test('Footer: grouped links, legal pages and a clean layout on every screen size', async ({ browser }) => {
+  for (const [w, h] of [[360, 740], [390, 844], [768, 1024], [1024, 768], [1280, 800], [1440, 900]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: w < 768, hasTouch: w < 768, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto(u('/'), { waitUntil: 'networkidle' });
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(400);
+    assert.ok(await noHorizontalScroll(page), w + 'px: no sideways scrolling');
+    const f = page.locator('footer.f73');
+    for (const href of ['/about', '/scholarships', '/news', '/volunteer', '/privacy-policy', '/terms', '/contact']) assert.ok(await f.locator(`a[href$="${href}"]`).count(), `${w}px footer link ${href}`);
+    assert.match(await f.locator('.f73-copy').innerText(), new RegExp('© ' + new Date().getFullYear()));
+    const report = await page.evaluate(() => {
+      const box = el => el.getBoundingClientRect();
+      const items = [...document.querySelectorAll('.f73 a, .f73 h3, .f73-contact li span, .f73-bottom p')].filter(e => box(e).width > 0);
+      const overlaps = [];
+      for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+        if (items[i].contains(items[j]) || items[j].contains(items[i])) continue;
+        const a = box(items[i]), b = box(items[j]);
+        if (a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1) overlaps.push(items[i].textContent.trim().slice(0, 20) + ' / ' + items[j].textContent.trim().slice(0, 20));
+      }
+      const floats = [...document.querySelectorAll('.floating-whatsapp, .live-chat-launch')].map(box);
+      const covered = [...document.querySelectorAll('.f73-bottom a, .f73-bottom p')].filter(e => floats.some(f => { const b = box(e); return b.left < f.right && b.right > f.left && b.top < f.bottom && b.bottom > f.top; })).map(e => e.textContent.trim());
+      const unlabeled = [...document.querySelectorAll('.f73-social a')].filter(a => !a.getAttribute('aria-label')).length;
+      const offscreen = items.filter(e => box(e).right > innerWidth + 1 || box(e).left < -1).length;
+      return { overlaps, covered, unlabeled, offscreen, height: Math.round(document.querySelector('.f73').getBoundingClientRect().height) };
+    });
+    assert.deepEqual(report.overlaps, [], `${w}px: footer items overlap`);
+    assert.deepEqual(report.covered, [], `${w}px: floating buttons cover footer text`);
+    assert.equal(report.unlabeled, 0, 'social links are labelled');
+    assert.equal(report.offscreen, 0, `${w}px: footer items off screen`);
+    if (w < 768) assert.ok(report.height < 1300, `${w}px: compact mobile footer (${report.height}px)`);
+    await ctx.close();
+  }
+  const ctx = await browser.newContext(); const page = await ctx.newPage();
+  for (const p of ['/privacy-policy', '/terms']) {
+    const r = await page.goto(u(p));
+    assert.equal(r.status(), 200, p);
+    assert.equal(await page.locator('h1').count(), 1);
+    assert.ok(await page.locator('.legal7-toc a').count() >= 3, p + ' has a table of contents');
+    assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /^index/);
+  }
   await ctx.close();
 });
 

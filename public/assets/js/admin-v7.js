@@ -308,3 +308,26 @@
     form.addEventListener('change',sync);sync();
   });
 })();
+
+/* V7.3 — scholarship review: approval needs “Meets the criteria” and a selection comment (also enforced by the server). */
+(()=>{
+  const qs=(s,r=document)=>r.querySelector(s);
+  const form=qs('[data-sch-review]');if(!form)return;
+  const guard=qs('[data-sch-guard]',form),commentGuard=qs('[data-sch-comment-guard]',form),comment=qs('[data-sch-comment]',form);
+  const startStatus=qs('input[name="status"]:checked',form)?.value||'';
+  const val=n=>qs(`input[name="${n}"]:checked`,form)?.value||'';
+  const sync=()=>{
+    const status=val('status'),elig=val('eligibility');
+    const blocked=status==='approved'&&elig!=='eligible';
+    const needsComment=(status==='approved'||status==='rejected')&&status!==startStatus&&!(comment?.value||'').trim();
+    if(guard)guard.hidden=!blocked;
+    if(commentGuard)commentGuard.hidden=!(needsComment&&form.dataset.tried==='1');
+    form.querySelectorAll('.sch-radio.is-status').forEach(l=>l.classList.toggle('is-blocked',l.classList.contains('is-approved')&&elig!=='eligible'));
+    return {blocked,needsComment};
+  };
+  form.addEventListener('change',sync);comment?.addEventListener('input',sync);sync();
+  form.addEventListener('submit',e=>{
+    form.dataset.tried='1';const r=sync();
+    if(r.blocked||r.needsComment){e.preventDefault();e.stopImmediatePropagation();(r.blocked?guard:commentGuard)?.scrollIntoView({block:'center',behavior:'smooth'});if(!r.blocked)comment?.focus();}
+  },true);
+})();

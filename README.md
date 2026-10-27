@@ -1,12 +1,18 @@
-# 97 Foundation Professional V7.2
+# 97 Foundation Professional V7.3
 
-Version: **Professional V7.2 — Homepage, Donations, Fundraising, News & SEO Update**
+Version: **Professional V7.3 — Scholarships & Education Support, Footer Update**
+
+V7.3 adds an online Student Scholarship & Education Support application (Scholarships page) and an Admin → Education Support → Scholarship Applications workspace where the team reviews, rates, filters and manually decides every application — nothing is approved automatically. Parent/guardian NIC numbers are stored encrypted and only authorised administrators (Super Admin and Administrator roles) can see applications. The website footer is redesigned and Privacy Policy and Terms & Conditions pages are added. **The database update applies automatically on the first page load** (or run `php database/upgrade_v7_3.php`, or import `database/upgrade_v7_3.sql` in phpMyAdmin). See `CHANGELOG.md`.
+
+**Back up `storage/private/personal-data.key` together with the database.** It is created automatically the first time an application is saved; without it, stored NIC numbers cannot be read. (Alternatively set a long `PERSONAL_DATA_KEY` environment variable on the server before the first application.)
+
+Previous release: **Professional V7.2 — Homepage, Donations, Fundraising, News & SEO Update**
 
 V7.2 redesigns the homepage with a calm motion system, makes a payment receipt mandatory for every bank-transfer donation, adds a global fundraising on/off switch, upgrades News & Blog (categories, readable web addresses, publish/unpublish, article pages with contents and related posts), adds share buttons and strengthens SEO. **The small database update applies automatically on the first page load** (or run `php database/upgrade_v7_2.php`). See `CHANGELOG.md`.
 
 ## Testing
 
-- Quick checks: `php tests/v7_2_features_static.php` (and the other files in `tests/`).
+- Quick checks: `php tests/v7_3_features_static.php`, `php tests/v7_2_features_static.php` (and the other files in `tests/`).
 - Browser tests (Playwright): `npm install --no-save playwright && npx playwright install chromium`, then
   `BASE_URL=http://localhost/97-foundation ADMIN_COOKIE="foundation97_session=<your session id>" node tests/e2e/site.e2e.js`.
   Sign in to the Admin normally first and copy the `foundation97_session` cookie; the Admin CAPTCHA blocks automated sign-in.

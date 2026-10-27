@@ -125,8 +125,9 @@ function site_primary_nav(): array
 {
     return [
         ['label' => 'Home', 'path' => '', 'match' => ['']],
-        ['label' => 'About Us', 'path' => 'about', 'match' => ['about', 'what-we-do'], 'children' => [
+        ['label' => 'About Us', 'path' => 'about', 'match' => ['about', 'what-we-do', 'scholarships', 'scholarships/*'], 'children' => [
             ['label' => 'What We Do', 'path' => 'what-we-do', 'description' => 'Our programmes and areas of support'],
+            ['label' => 'Scholarships', 'path' => 'scholarships', 'description' => 'Apply for education support'],
             ['label' => '97 Foundation', 'path' => 'about', 'description' => 'Our story, mission and values'],
         ]],
         ['label' => 'Members', 'path' => 'members', 'match' => ['members', 'members/*'], 'children' => [
@@ -294,6 +295,21 @@ function site_line_icon(string $name, string $class = ''): string
         'search' => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
         'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
         'list' => '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1" fill="currentColor" stroke="none"/>',
+        // V7.3 scholarship, footer and legal-page icons
+        'graduation' => '<path d="m2.5 9.5 9.5-5 9.5 5-9.5 5Z"/><path d="M6.5 11.6v4.6c0 1.5 2.5 3.3 5.5 3.3s5.5-1.8 5.5-3.3v-4.6"/><path d="M21.5 9.5v5"/>',
+        'school' => '<path d="M3 20.5h18"/><path d="M5 20.5V10l7-4.5 7 4.5v10.5"/><path d="M12 5.5V2.5h3.5"/><path d="M10 20.5v-5h4v5"/><path d="M8.5 11.5h.01M15.5 11.5h.01"/>',
+        'book' => '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5Z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7h6"/>',
+        'user' => '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+        'id' => '<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16.2a3.4 3.4 0 0 1 6.4 0M14.5 10h4M14.5 13.5h3"/>',
+        'phone' => '<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a1.5 1.5 0 0 1-1.6 1.5A16 16 0 0 1 3.5 5.6 1.5 1.5 0 0 1 5 4Z"/>',
+        'home' => '<path d="m3.5 11 8.5-7 8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>',
+        'file' => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+        'alert' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.5h.01"/>',
+        'star' => '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9Z"/>',
+        'copy' => '<rect x="8.5" y="8.5" width="12" height="12" rx="2.2"/><path d="M15.5 8.5V5.7a2.2 2.2 0 0 0-2.2-2.2H5.7a2.2 2.2 0 0 0-2.2 2.2v7.6a2.2 2.2 0 0 0 2.2 2.2h2.8"/>',
+        'print' => '<path d="M7 8.5V3.5h10v5"/><rect x="3.5" y="8.5" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7Z"/>',
+        'chat' => '<path d="M20 11.5a7.5 7.5 0 0 1-10.8 6.7L4 19.5l1.4-4.3A7.5 7.5 0 1 1 20 11.5Z"/>',
+        'scale' => '<path d="M12 3.5v17M7 20.5h10M4.5 7.5h15"/><path d="m4.5 7.5-2.5 6a2.8 2.8 0 0 0 5 0Zm15 0-2.5 6a2.8 2.8 0 0 0 5 0Z"/>',
     ];
     $body = $paths[$name] ?? $paths['heart'];
     return '<svg class="' . e(trim('li7 ' . $class)) . '" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $body . '</svg>';

@@ -8,7 +8,7 @@ $description=$seoData['description']??($seoSettings['default_description']??'97 
 $canonical=!empty($seoData['canonical'])?(string)$seoData['canonical']:absolute_url(ltrim(current_path(),'/'));
 $seoType=in_array($seoData['type']??'',['article','website'],true)?$seoData['type']:'website';
 // Private and transactional pages stay out of search results.
-$noindex=!empty($seoData['noindex'])||(bool)preg_match('#^/(login|logout|member(/|$)|portal(/|$)|admin(/|$)|donate/(payment|online)(/|$)|verify(/|$))#',current_path());
+$noindex=!empty($seoData['noindex'])||(bool)preg_match('#^/(login|logout|member(/|$)|portal(/|$)|admin(/|$)|donate/(payment|online)(/|$)|verify(/|$)|scholarships/submitted(/|$))#',current_path());
 $logo=$foundation['logo_path']??'';$logoEnabled=($foundation['logo_enabled']??'1')==='1';$favicon=$foundation['favicon_path']??'';
 $orgName=$foundation['name']??'97 Foundation';$orgWebsite=trim((string)($foundation['website']??''))?:absolute_url('');
 $socialImage=$seoData['image']??($seoSettings['social_image']??'');$socialImageUrl=$socialImage?(preg_match('~^https?://~i',(string)$socialImage)?(string)$socialImage:absolute_url('public/uploads/'.ltrim((string)$socialImage,'/'))):'';
@@ -25,7 +25,6 @@ $schema=[
 ];
 $socialLinks=\App\Core\Database::all('SELECT * FROM social_links WHERE is_active=1 ORDER BY sort_order,id');
 $schema['sameAs']=array_values(array_filter(array_map(fn($row)=>trim((string)($row['url']??'')),$socialLinks)));
-try{$footerVolunteerCount=(int)(\App\Core\Database::one('SELECT COUNT(*) c FROM volunteers WHERE status IN("approved","active")')['c']??0);$footerDonationCount=(int)(\App\Core\Database::one('SELECT COUNT(*) c FROM donations WHERE status="approved"')['c']??0);}catch(\Throwable){$footerVolunteerCount=0;$footerDonationCount=0;}
 $breadcrumbSchema=null;if(!empty($seoData['breadcrumbs'])&&is_array($seoData['breadcrumbs'])){$items=[];foreach(array_values($seoData['breadcrumbs']) as $i=>$bc){$items[]=['@type'=>'ListItem','position'=>$i+1,'name'=>(string)$bc[0],'item'=>absolute_url((string)$bc[1])];}$breadcrumbSchema=['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>$items];}
 $websiteSchema=['@context'=>'https://schema.org','@type'=>'WebSite','@id'=>$orgWebsite.'#website','name'=>$orgName,'url'=>$orgWebsite,'inLanguage'=>'en-LK','publisher'=>['@type'=>'Organization','name'=>$orgName,'url'=>$orgWebsite]];
 $pageSchema=['@context'=>'https://schema.org','@type'=>'WebPage','name'=>$pageTitle,'description'=>$description,'url'=>$canonical,'isPartOf'=>['@type'=>'WebSite','name'=>$orgName,'url'=>$orgWebsite],'about'=>['@type'=>'Thing','name'=>$targetLocality.', '.$targetDistrict.', '.$targetCountry]]; if(!empty($post)&&isset($article)&&$seoType==='article'){ $pageSchema=['@context'=>'https://schema.org','@type'=>($post['post_type']??'')==='blog'?'BlogPosting':'NewsArticle','headline'=>mb_substr((string)$post['title'],0,110),'description'=>$description,'datePublished'=>date('c',strtotime((string)$post['published_at'])),'dateModified'=>date('c',strtotime((string)($post['updated_at']??$post['published_at']))),'mainEntityOfPage'=>['@type'=>'WebPage','@id'=>$canonical],'url'=>$canonical,'inLanguage'=>'en-LK','articleSection'=>$seoData['section']??null,'wordCount'=>str_word_count(strip_tags((string)($post['content']??''))),'author'=>['@type'=>'Organization','name'=>$orgName,'url'=>$orgWebsite],'publisher'=>['@type'=>'Organization','name'=>$orgName,'url'=>$orgWebsite,'logo'=>['@type'=>'ImageObject','url'=>$logo?absolute_url('public/uploads/'.ltrim((string)$logo,'/')):absolute_url('public/assets/images/brand/97-foundation-logo.png')]]]; if($socialImageUrl)$pageSchema['image']=[$socialImageUrl]; $pageSchema=array_filter($pageSchema,static fn($v)=>$v!==null); } elseif(!empty($page['answer_summary'])) $pageSchema['abstract']=(string)$page['answer_summary']; elseif(!empty($seoSettings['answer_summary'])) $pageSchema['abstract']=(string)$seoSettings['answer_summary'];
@@ -38,7 +37,7 @@ $pageSchema=['@context'=>'https://schema.org','@type'=>'WebPage','name'=>$pageTi
 <?php if(!empty($heroPreloadUrl)):?><link rel="preload" as="image" href="<?=e($heroPreloadUrl)?>" fetchpriority="high" media="(min-width: 769px)"><?php endif;?>
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="<?=e($pageTitle)?>"><meta name="twitter:description" content="<?=e($description)?>"><?php if($socialImageUrl):?><meta name="twitter:image" content="<?=e($socialImageUrl)?>"><?php endif;?>
 <script type="application/ld+json"><?=seo_json($schema)?></script><?php if(isset($websiteSchema)):?><script type="application/ld+json"><?=seo_json($websiteSchema)?></script><?php endif;?><script type="application/ld+json" data-page-schema><?=seo_json($pageSchema)?></script><?php if($breadcrumbSchema):?><script type="application/ld+json" data-breadcrumb-schema><?=seo_json($breadcrumbSchema)?></script><?php endif;?>
-<script src="<?=asset('js/motion-flag.js')?>"></script><link rel="preload" href="<?=url('public/assets/fonts/inter-latin.woff2')?>" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="<?=asset('css/app.css')?>"><link rel="stylesheet" href="<?=asset('css/site-v7.css')?>"><link rel="stylesheet" href="<?=asset('css/site-home.css')?>"></head><body><div class="scroll7-progress" aria-hidden="true"><i data-scroll-progress></i></div>
+<script src="<?=asset('js/motion-flag.js')?>"></script><link rel="preload" href="<?=url('public/assets/fonts/inter-latin.woff2')?>" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="<?=asset('css/app.css')?>"><link rel="stylesheet" href="<?=asset('css/site-v7.css')?>"><link rel="stylesheet" href="<?=asset('css/site-home.css')?>"><link rel="stylesheet" href="<?=asset('css/site-v73.css')?>"></head><body><div class="scroll7-progress" aria-hidden="true"><i data-scroll-progress></i></div>
 <?php
 $brandLogo=brand_logo_url($foundation);$brandWordmark=brand_wordmark_url($foundation);
 $contactEmail=trim((string)($foundation['email']??''))?:'97found@gmail.com';
@@ -113,12 +112,111 @@ $headerBrand=header_brand_settings($settings??null);
   </aside>
 </div>
 <main id="main-content" data-spa-main tabindex="-1"><?=$content?></main>
-<footer class="footer glass-footer"><div class="footer-ambient" aria-hidden="true"></div><div class="container footer-glass-shell"><div class="footer-grid"><div class="footer-brand-col"><a class="brand brand-footer" href="<?=url('')?>" data-spa-link><?php if($logoEnabled):?><img class="brand-upload" src="<?=e($brandLogo)?>" alt="<?=e($orgName)?> logo"><?php else:?><span class="footer-logo-97">97</span><?php endif;?><span class="brand-copy"><b>97</b> FOUNDATION<small><?=e($foundation['tagline']??'Hope · Help · Humanity.')?></small></span></a><p>Creating positive change through compassion, community and accountable action across <?=e($targetDistrict)?> and surrounding communities.</p><div class="footer-rule"></div><div class="socials footer-socials"><?php foreach($socialLinks as $sl):$socialKind=social_platform_key($sl['platform'],$sl['url']);?><a class="social-link social-kind-<?=e($socialKind)?>" href="<?=e($sl['url'])?>" target="_blank" rel="noopener noreferrer" aria-label="<?=e($sl['label']?:$sl['platform'])?>" data-tooltip="<?=e($sl['label']?:$sl['platform'])?>" title="<?=e($sl['label']?:$sl['platform'])?>"><?=social_icon_svg($sl['platform'],$sl['url'])?></a><?php endforeach;?><?php if(!$socialLinks&&$facebookUrl!==''):?><a class="social-link social-kind-facebook" href="<?=e($facebookUrl)?>" target="_blank" rel="noopener noreferrer" aria-label="Facebook" data-tooltip="Facebook" title="Facebook"><?=social_icon_svg('facebook',$facebookUrl)?></a><?php endif;?></div></div>
-<div class="footer-link-col"><h4>Quick Links</h4><a href="<?=url('about')?>" data-spa-link>› <span>About Us</span></a><a href="<?=url('causes')?>" data-spa-link>› <span>Our Causes</span></a><?php if($fundraisingOn7):?><a href="<?=url('campaigns')?>" data-spa-link>› <span>Campaigns</span></a><?php endif;?><a href="<?=url('gallery')?>" data-spa-link>› <span>Gallery</span></a><a href="<?=url('news')?>" data-spa-link>› <span>News & Blog</span></a></div>
-<div class="footer-link-col"><h4>Get Involved</h4><?php if($donationsOpen7):?><a href="<?=url('donate')?>" data-spa-link>› <span>Donate</span></a><?php endif;?><a href="<?=url('volunteer')?>" data-spa-link>› <span>Volunteer</span></a><a href="<?=url('events')?>" data-spa-link>› <span>Events</span></a><a href="<?=url('members')?>" data-spa-link>› <span>Foundation Members</span></a><a href="<?=url('member/register')?>" data-spa-link>› <span>Member Registration</span></a><a href="<?=url('member/login')?>" data-spa-link>› <span>Member Login</span></a></div>
-<div class="footer-contact-col"><h4>Contact Info</h4><p><span class="footer-contact-icon"><?=contact_icon_svg('address')?></span><b><?=e($orgAddress)?></b></p><p><span class="footer-contact-icon"><?=contact_icon_svg('phone')?></span><b><?=e($contactPhone)?></b></p><p><span class="footer-contact-icon"><?=contact_icon_svg('email')?></span><b><?=e($contactEmail)?></b></p><p><span class="footer-contact-icon"><?=contact_icon_svg('website')?></span><b><?=e($orgWebsite)?></b></p><p><span class="footer-contact-icon"><?=contact_icon_svg('hours')?></span><b><?=e($foundation['opening_hours']??'Mon - Fri: 8:00 AM - 6:00 PM')?></b></p></div>
-<div class="footer-donate-col"><h4>Secure Donations</h4><a class="footer-qr-card" href="<?=url('donate')?>" data-spa-link aria-label="Open donation page"><div class="footer-qr" data-qr-code data-qr-text="<?=e(absolute_url('donate'))?>"></div><span>Scan to Donate</span><small>Account details are managed by authorized administrators.</small></a></div></div>
-<div class="footer-lower"><div class="footer-support-note"><span class="footer-lower-icon">♡</span><div><b>Your support helps us</b><small>create a better tomorrow.</small></div></div><div class="footer-metric"><span class="footer-lower-icon">✓</span><div><?php if($footerDonationCount>0):?><b><?=number_format($footerDonationCount)?></b><small>Verified Donations</small><?php else:?><b>Verified</b><small>Every donation is checked</small><?php endif;?></div></div><div class="footer-metric"><span class="footer-lower-icon">♧</span><div><?php if($footerVolunteerCount>0):?><b><?=number_format($footerVolunteerCount)?></b><small>Active Volunteers</small><?php else:?><b><a href="<?=url('volunteer')?>" data-spa-link>Volunteer</a></b><small>Join our community team</small><?php endif;?></div></div><div class="footer-copyright"><b>© <?=date('Y')?> <?=e($orgName)?>. All rights reserved.</b><small>Fully Developed by 97 Foundation IT Team.</small></div></div></div></footer>
+<?php
+// V7.3 footer: frosted-glass panels over an aurora background, quick actions, grouped links and legal pages.
+$footerCats7=[];try{$footerCats7=\App\Core\Database::all('SELECT c.name,c.slug FROM post_categories c WHERE c.is_active=1 AND EXISTS(SELECT 1 FROM posts p WHERE p.category_id=c.id AND p.status="published") ORDER BY c.sort_order,c.name LIMIT 3');}catch(\Throwable){$footerCats7=[];}
+$scholarshipsOpen7=\App\Core\Scholarship::applicationsOpen();
+$footerHours7=trim((string)($foundation['opening_hours']??''))?:'Mon – Fri: 8:00 AM – 6:00 PM';
+$footerIntro7='Creating positive change through compassion, community and accountable action across '.$targetDistrict.' and surrounding communities.';
+$footerActions7=[
+  ['scholarships'.($scholarshipsOpen7?'#apply':''),'graduation',$scholarshipsOpen7?'Apply for a scholarship':'Scholarships','Apply','O/L, A/L, university &amp; school support'],
+  $donationsOpen7?['donate','heart','Donate securely','Donate','Bank transfer or card, every gift verified']:['campaigns','campaign','Our campaigns','Campaigns','See what the community is building'],
+  ['volunteer','people','Become a volunteer','Volunteer','Give your time to local programmes'],
+];
+?>
+<footer class="f73" aria-labelledby="f73-title" data-footer>
+  <h2 class="sr-only" id="f73-title">About 97 Foundation and site links</h2>
+  <div class="f73-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="container f73-wrap">
+    <nav class="f73-actions" aria-label="Get involved">
+      <?php foreach($footerActions7 as [$path,$icon,$title,$short,$text]):$parts=explode('#',$path,2);?>
+      <a class="f73-action f73-glass" href="<?=url($parts[0])?><?=isset($parts[1])?'#'.e($parts[1]):''?>" data-spa-link aria-label="<?=e($title)?>">
+        <span class="f73-action-icon"><?=site_line_icon($icon)?></span>
+        <span class="f73-action-copy"><b><span class="f73-long"><?=e($title)?></span><span class="f73-short"><?=e($short)?></span></b><small><?=$text?></small></span>
+        <span class="f73-action-go" aria-hidden="true"><?=site_line_icon('arrow')?></span>
+      </a>
+      <?php endforeach;?>
+    </nav>
+
+    <div class="f73-shell f73-glass" data-footer-shell>
+      <div class="f73-top">
+        <div class="f73-brand">
+          <a class="f73-logo" href="<?=url('')?>" data-spa-link aria-label="<?=e($orgName)?> — Home">
+            <span class="f73-logo-badge"><?php if($logoEnabled):?><img src="<?=e($brandLogo)?>" alt="" width="44" height="44" loading="lazy" decoding="async"><?php else:?><b>97</b><?php endif;?></span>
+            <span class="f73-logo-text"><b><?=e(strtoupper($orgName))?></b><small><?=e($foundation['tagline']??'Hope · Help · Humanity.')?></small></span>
+          </a>
+          <p class="f73-intro"><?=e($footerIntro7)?></p>
+          <?php if($socialLinks||$facebookUrl!==''):?><ul class="f73-social" aria-label="Follow 97 Foundation">
+            <?php foreach($socialLinks as $sl):$socialKind=social_platform_key($sl['platform'],$sl['url']);$socialLabel=$sl['label']?:$sl['platform'];?><li><a class="social-kind-<?=e($socialKind)?>" href="<?=e($sl['url'])?>" target="_blank" rel="noopener noreferrer" aria-label="<?=e($socialLabel)?> (opens in a new tab)" title="<?=e($socialLabel)?>"><?=social_icon_svg($sl['platform'],$sl['url'])?></a></li><?php endforeach;?>
+            <?php if(!$socialLinks&&$facebookUrl!==''):?><li><a class="social-kind-facebook" href="<?=e($facebookUrl)?>" target="_blank" rel="noopener noreferrer" aria-label="Facebook (opens in a new tab)" title="Facebook"><?=social_icon_svg('facebook',$facebookUrl)?></a></li><?php endif;?>
+          </ul><?php endif;?>
+          <?php if($donationsOpen7):?><a class="f73-qr" href="<?=url('donate')?>" data-spa-link aria-label="Open the donation page"><span class="f73-qr-code" data-qr-code data-qr-text="<?=e(absolute_url('donate'))?>"></span><span><b>Scan to donate</b><small>Opens the secure donation page on your phone.</small></span></a><?php endif;?>
+        </div>
+
+        <nav class="f73-links" aria-label="Footer">
+          <div class="f73-col">
+            <h3>Explore</h3>
+            <ul>
+              <li><a href="<?=url('about')?>" data-spa-link>About Us</a></li>
+              <li><a href="<?=url('what-we-do')?>" data-spa-link>What We Do</a></li>
+              <li><a href="<?=url('causes')?>" data-spa-link>Our Causes</a></li>
+              <li><a href="<?=url('events')?>" data-spa-link>Events</a></li>
+              <li><a href="<?=url('gallery')?>" data-spa-link>Gallery</a></li>
+              <li><a href="<?=url('members')?>" data-spa-link>Our Members</a></li>
+              <li><a href="<?=url('contact')?>" data-spa-link>Contact Us</a></li>
+            </ul>
+          </div>
+          <div class="f73-col">
+            <h3>Education</h3>
+            <ul>
+              <li><a href="<?=url('scholarships')?>" data-spa-link>Scholarships</a></li>
+              <?php if($scholarshipsOpen7):?><li><a class="f73-hl" href="<?=url('scholarships')?>#apply" data-spa-link title="Applications are open">Apply Online<i class="f73-dot" aria-hidden="true"></i></a></li><?php endif;?>
+              <li><a href="<?=url('scholarships')?>#process" data-spa-link>Selection Process</a></li>
+              <li><a href="<?=url('scholarships')?>#faq" data-spa-link>Scholarship FAQs</a></li>
+            </ul>
+          </div>
+          <div class="f73-col">
+            <h3>Get Involved</h3>
+            <ul>
+              <?php if($donationsOpen7):?><li><a href="<?=url('donate')?>" data-spa-link>Donate</a></li><?php endif;?>
+              <?php if($fundraisingOn7):?><li><a href="<?=url('campaigns')?>" data-spa-link>Campaigns</a></li><?php endif;?>
+              <li><a href="<?=url('volunteer')?>" data-spa-link>Volunteer</a></li>
+              <li><a href="<?=url('member/register')?>" data-spa-link>Become a Member</a></li>
+              <li><a href="<?=url('login')?>" data-spa-link>Portal Login</a></li>
+            </ul>
+          </div>
+          <div class="f73-col">
+            <h3>News &amp; Blog</h3>
+            <ul>
+              <li><a href="<?=url('news')?>" data-spa-link>Latest News</a></li>
+              <?php foreach($footerCats7 as $fc):?><li><a href="<?=url('news/category/'.rawurlencode((string)$fc['slug']))?>" data-spa-link><?=e($fc['name'])?></a></li><?php endforeach;?>
+            </ul>
+          </div>
+        </nav>
+
+        <div class="f73-contact">
+          <h3>Contact</h3>
+          <ul>
+            <li><span class="f73-ico"><?=contact_icon_svg('address')?></span><span><?=e($orgAddress)?></span></li>
+            <li><span class="f73-ico"><?=contact_icon_svg('phone')?></span><a href="tel:<?=e(tel_href($contactPhone))?>"><?=e($contactPhone)?></a></li>
+            <li><span class="f73-ico"><?=contact_icon_svg('email')?></span><a href="mailto:<?=e($contactEmail)?>"><?=e($contactEmail)?></a></li>
+            <li><span class="f73-ico"><?=contact_icon_svg('hours')?></span><span><?=e($footerHours7)?></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="f73-bottom">
+        <p class="f73-copy">© <?=date('Y')?> <?=e($orgName)?>. All rights reserved.</p>
+        <ul class="f73-legal">
+          <li><a href="<?=url('privacy-policy')?>" data-spa-link>Privacy Policy</a></li>
+          <li><a href="<?=url('terms')?>" data-spa-link>Terms &amp; Conditions</a></li>
+        </ul>
+        <p class="f73-credit">Fully Developed by 97 Foundation IT Team.</p>
+      </div>
+    </div>
+  </div>
+  <div class="f73-mark" aria-hidden="true">97 FOUNDATION</div>
+</footer>
 
 <?php $waNumber=preg_replace('/\D+/','',(string)($foundation['whatsapp']??$foundation['phone']??''));?>
 <?php if($waNumber):?><a class="floating-whatsapp" href="https://wa.me/<?=e($waNumber)?>" target="_blank" rel="noopener noreferrer" aria-label="Contact 97 Foundation on WhatsApp" title="WhatsApp 97 Foundation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.5 0 .2 5.3.2 11.9c0 2.1.6 4.1 1.6 5.9L0 24l6.4-1.7a12 12 0 0 0 5.7 1.5h.1c6.6 0 11.9-5.3 11.9-11.9 0-3.2-1.3-6.2-3.6-8.4Zm-8.4 18.3c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.8 1 1-3.7-.2-.4A9.8 9.8 0 1 1 12.1 21.8Zm5.4-7.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-1.8-.9-3-1.6-4.2-3.6-.3-.5.3-.5.9-1.6.1-.2.1-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9 0 1.7 1.2 3.3 1.4 3.6.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.4Z"/></svg><span>WhatsApp</span></a><?php endif;?>
